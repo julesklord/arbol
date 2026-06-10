@@ -5,23 +5,39 @@ Minimal fastfetch-style status tool — a tiny, focused utility to show system i
 Overview
 --------
 
-mini-fetch is a minimal, dependency-light system information tool intended to be developed and maintained in this repository. It contains a tiny shell script starter and room for a Go implementation if desired.
+mini-fetch is a small CLI utility for quickly viewing system information in your terminal. This repo follows the Jules Dev Standard. Use the `template/` directory in the org standard as reference for documentation and structure.
 
 Quickstart
 ----------
 
-1. Clone the repo and develop the script in `scripts/`.
-2. Build (if implementing in Go): `go build -o mini-fetch .` from the repo root.
-3. Run: `./mini-fetch --no-ascii` or `scripts/mini-fetch.sh`.
+Clone and run the provided shell starter:
+
+```bash
+git clone <this-repo>
+cd mini-fetch
+scripts/mini-fetch.sh
+```
+
+If you implement a Go version, build from the repo root:
+
+```bash
+make build
+```
+
+Install the script/binary system-wide:
+
+```bash
+sudo make install
+```
 
 Repository Structure
 --------------------
 
-- scripts/: place to develop the POSIX/bash implementation.
-- docs/: project-level documentation and wiki.
-- LICENSE, VERSION, CHANGELOG.md: repo metadata.
+- scripts/: POSIX-compatible implementation. (Primary development area.)
+- docs/: repository wiki and developer guides.
+- VERSION, CHANGELOG.md, LICENSE: project metadata.
 
 Contributing
 ------------
 
-Follow the repository standard located in `docs/wiki/`.
+Follow the standards in `repos/jules_dev_standard/template`. Create a branch, open a PR, and include tests or shellcheck where appropriate.
