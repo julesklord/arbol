@@ -1,3 +1,1 @@
-module github.com/local/mini-fetch
-
-go 1.20
+// empty placeholder go.mod to avoid accidental builds in the repo root
