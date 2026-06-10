@@ -1,0 +1,6 @@
+*.exe
+mini-fetch
+node_modules/
+/.vscode/
+/.idea/
+*.log
