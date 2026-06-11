@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.4 - Developer & System plugins
+- Created `plugins/battery.sh` to report battery level and charging status across Linux and macOS.
+- Created `plugins/ip.sh` to fetch and show both internal IP and public IP addresses (with a 1s connection timeout).
+- Created `plugins/k8s.sh` to retrieve active Kubernetes context and namespace using kubectl.
+
 ## 0.2.3 - Packages manager plugin
 - Created `plugins/packages.sh` to count installed package manager details, supporting native `pacman` packages and foreign (AUR) packages via helper detection (`paru`/`yay`).
 
