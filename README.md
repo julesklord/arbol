@@ -54,6 +54,34 @@ tinyfetch
 | `--help` | `-h` | Display version and usage instructions. |
 | `--no-ascii` | | Omit the side-by-side system ASCII logo. |
 
+## Extensibility & Plugins
+
+**tinyfetch** is fully extensible via custom plugins. It scans the `./plugins` directory for executable scripts or binaries (written in Bash, Python, Go, Node, etc.) and appends their output dynamically to the info card.
+
+### Creating a Plugin
+
+1. Create an executable file inside the `./plugins/` directory:
+   ```bash
+   touch plugins/my-plugin.sh
+   chmod +x plugins/my-plugin.sh
+   ```
+2. Your script should output exactly one line in one of the following formats:
+   - **Label format**: `Label: Value` (e.g. `Network: Connected`). `tinyfetch` will automatically colorize the label in blue.
+   - **Plain format**: `Value` (e.g. `Connected`). `tinyfetch` will automatically format it using the capitalized filename as the label (e.g. `my-plugin` becomes `My-plugin`).
+3. If a plugin needs to exit early or is not applicable, it should print nothing and exit with code `0`. Any plugin that produces empty output will be cleanly omitted from the dashboard.
+
+### Included Plugins
+
+The repository contains several useful out-of-the-box plugins under [plugins/](file:///home/julesklord/Proyectos/repos/mini-fetch/plugins):
+- **Battery** (`battery.sh`): Displays current battery percentage and charge status (supports Linux & macOS).
+- **Docker** (`docker.sh`): Shows active containers and daemon status.
+- **Git** (`git.sh`): Reports current branch, dirty status, and counters for staged/modified/untracked files with Nerd Fonts.
+- **Network** (`ip.sh`): Shows local and external IP addresses (using `icanhazip.com` with a 1s connection timeout).
+- **Kubernetes** (`k8s.sh`): Reports active kubectl context and namespace.
+- **Packages** (`packages.sh`): Lists installed packages (supports `pacman` and `paru`/`yay`).
+- **Weather** (`weather.sh`): Fetches temperature and sky status.
+- **Media Player** (`media.sh`): Shows currently playing song or media status.
+
 ## Architecture
 
 The utility checks the runtime operating system and dynamically resolves resource usage metrics through the most efficient native queries available.
