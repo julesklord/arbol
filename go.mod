@@ -1,1 +1,3 @@
-// empty placeholder go.mod to avoid accidental builds in the repo root
+module mini-fetch
+
+go 1.20

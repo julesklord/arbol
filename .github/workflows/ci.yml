@@ -19,6 +19,8 @@ jobs:
         uses: ludeeus/action-shellcheck@v1
         with:
           args: scripts/mini-fetch.sh
-      - name: Build (if present)
-        run: |
-          if [ -f main.go ]; then go build -o mini-fetch .; else echo "no main.go"; fi
+      - name: Build
+        run: make build
+      - name: Run Tests
+        run: make test
+
