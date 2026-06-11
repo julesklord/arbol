@@ -1,4 +1,4 @@
-# mini-fetch
+# tinyfetch
 
 > Minimal fastfetch-style status tool — a tiny, focused utility to show system info in a compact, beautiful layout.
 
@@ -7,8 +7,8 @@
 
 ## Overview
 
-**mini-fetch** is a tiny, dependency-free CLI status utility designed to quickly fetch and display essential system information in your terminal. It offers two implementations:
-1. A robust, portable POSIX-compliant Shell script (`scripts/mini-fetch.sh`).
+**tinyfetch** is a tiny, dependency-free CLI status utility designed to quickly fetch and display essential system information in your terminal. It offers two implementations:
+1. A robust, portable POSIX-compliant Shell script (`scripts/tinyfetch.sh`).
 2. A high-performance compiled Go binary.
 
 Both versions present a side-by-side colorized representation of the host OS logo and core resource metrics (Host, OS, Kernel, Uptime, Shell, CPU, Memory, and Disk usage).
@@ -18,9 +18,9 @@ Both versions present a side-by-side colorized representation of the host OS log
 ### Via Script (Quickstart)
 
 ```bash
-git clone https://github.com/julesklord/mini-fetch.git
-cd mini-fetch
-scripts/mini-fetch.sh
+git clone https://github.com/julesklord/tinyfetch.git
+cd tinyfetch
+scripts/tinyfetch.sh
 ```
 
 ### From Source (Go Version)
@@ -44,7 +44,7 @@ sudo make install
 Run the utility directly from your shell:
 
 ```bash
-mini-fetch
+tinyfetch
 ```
 
 ### Command Reference

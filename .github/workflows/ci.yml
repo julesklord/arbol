@@ -18,7 +18,7 @@ jobs:
       - name: shellcheck
         uses: ludeeus/action-shellcheck@v1
         with:
-          args: scripts/mini-fetch.sh
+          args: scripts/tinyfetch.sh
       - name: Build
         run: make build
       - name: Run Tests

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Package manager count plugin for mini-fetch (pacman and paru/yay)
+# Package manager count plugin for tinyfetch (pacman and paru/yay)
 set -euo pipefail
 
 # Check if pacman exists

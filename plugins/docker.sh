@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Docker containers count plugin for mini-fetch
+# Docker containers count plugin for tinyfetch
 set -euo pipefail
 
 # Check if docker command exists

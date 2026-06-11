@@ -22,7 +22,7 @@ This document guides developers on local setup, running tests, and creating cust
 
 ## Creating Custom Plugins
 
-`mini-fetch` scans the `./plugins` directory for executable scripts or binaries. You can write plugins in Bash, Python, Go, Node, or any other scripting language.
+`tinyfetch` scans the `./plugins` directory for executable scripts or binaries. You can write plugins in Bash, Python, Go, Node, or any other scripting language.
 
 ### Plugin Requirements
 
@@ -56,5 +56,5 @@ chmod +x plugins/battery.sh
 
 ## Git Workflow & Conventions
 
-Follow the rules in [hygiene.md](file:///home/julesklord/Proyectos/repos/mini-fetch/docs/wiki/hygiene.md) for conventional commit messages. Keep changes atomic.
+Follow the rules in [hygiene.md](file:///home/julesklord/Proyectos/repos/tinyfetch/docs/wiki/hygiene.md) for conventional commit messages. Keep changes atomic.
 

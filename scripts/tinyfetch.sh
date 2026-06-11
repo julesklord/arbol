@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Robust and portable mini-fetch script
+# Robust and portable tinyfetch script
 set -euo pipefail
 
 if [ "${1-}" = "--help" ] || [ "${1-}" = "-h" ]; then
@@ -174,7 +174,7 @@ DISTRO_ID=$(get_distro_id)
 
 # Find ASCII file path
 ASCII_FILE=""
-for path in "./ascii/${DISTRO_ID}.txt" "/usr/local/share/mini-fetch/ascii/${DISTRO_ID}.txt" "/usr/share/mini-fetch/ascii/${DISTRO_ID}.txt"; do
+for path in "./ascii/${DISTRO_ID}.txt" "/usr/local/share/tinyfetch/ascii/${DISTRO_ID}.txt" "/usr/share/tinyfetch/ascii/${DISTRO_ID}.txt"; do
   if [ -f "$path" ]; then
     ASCII_FILE="$path"
     break
@@ -187,7 +187,7 @@ if [ -z "$ASCII_FILE" ]; then
   if [ "$OS_TYPE" = "Darwin" ]; then
     fallback_name="darwin"
   fi
-  for path in "./ascii/${fallback_name}.txt" "/usr/local/share/mini-fetch/ascii/${fallback_name}.txt" "/usr/share/mini-fetch/ascii/${fallback_name}.txt"; do
+  for path in "./ascii/${fallback_name}.txt" "/usr/local/share/tinyfetch/ascii/${fallback_name}.txt" "/usr/share/tinyfetch/ascii/${fallback_name}.txt"; do
     if [ -f "$path" ]; then
       ASCII_FILE="$path"
       break

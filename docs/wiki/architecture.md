@@ -1,10 +1,10 @@
 # Architecture and Decisions (ADRs)
 
-This document records the system architecture and key design decisions for `mini-fetch`.
+This document records the system architecture and key design decisions for `tinyfetch`.
 
 ## System Overview
 
-`mini-fetch` is designed as a dual-channel status reporter (a portable POSIX-compatible Shell script and a compiled Go binary). The tool queries system resource endpoints and renders a structured, double-pane terminal card box.
+`tinyfetch` is designed as a dual-channel status reporter (a portable POSIX-compatible Shell script and a compiled Go binary). The tool queries system resource endpoints and renders a structured, double-pane terminal card box.
 
 ```mermaid
 graph TD

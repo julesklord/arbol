@@ -17,13 +17,13 @@ All notable changes to this project will be documented in this file.
 
 
 ## 0.2.0 - Multiplatform stability & Go version
-- Refactored `scripts/mini-fetch.sh` for Linux & macOS portability under `set -e`.
+- Refactored `scripts/tinyfetch.sh` for Linux & macOS portability under `set -e`.
 - Fixed ShellCheck `SC2034` warning.
 - Added support for a modular plugins folder (`./plugins/`).
 - Added dynamic distro ASCII logo loading from `ascii/` text files with automatic fallbacks.
 - Added visual progress bars for memory and disk usage metrics.
 - Replaced standard printing with an innovative double-pane terminal card layout with box-drawing borders.
-- Implemented compiled Go version in `cmd/mini-fetch/main.go`.
+- Implemented compiled Go version in `cmd/tinyfetch/main.go`.
 - Added test suite in `tests/test.sh`.
 - Created standard FMG files (`docs/AGENT.md`, `docs/GEMINI.md`, etc.).
 

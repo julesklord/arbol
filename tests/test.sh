@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Simple test harness for mini-fetch (both Shell and Go versions)
+# Simple test harness for tinyfetch (both Shell and Go versions)
 set -euo pipefail
 
 failed=0
@@ -73,11 +73,11 @@ run_suite() {
 }
 
 # 1. Run Shell script test
-run_suite "bash scripts/mini-fetch.sh" "Shell"
+run_suite "bash scripts/tinyfetch.sh" "Shell"
 
 # 2. Run Go version test (if compiled)
-if [ -f "./mini-fetch" ]; then
-  run_suite "./mini-fetch" "Go"
+if [ -f "./tinyfetch" ]; then
+  run_suite "./tinyfetch" "Go"
 else
   echo "Skipping Go tests: binary not built"
 fi

@@ -1,4 +1,4 @@
-# Agent SOP: mini-fetch
+# Agent SOP: tinyfetch
 
 ## Role
 
@@ -12,7 +12,7 @@ Expert assistant in Bash and Go, responsible for maintaining portability, code c
 ## Laws of Operation
 
 1. **Context First**: Read target files before editing. Never assume system APIs are the same across platforms.
-2. **Mandatory Verification**: Run `shellcheck scripts/mini-fetch.sh` and `make build` before reporting success.
+2. **Mandatory Verification**: Run `shellcheck scripts/tinyfetch.sh` and `make build` before reporting success.
 3. **Atomicity**: One logical change per operation. Do not mix refactors with fixes.
 4. **Preservation**: Do not delete existing comments or docstrings.
 5. **Transparency**: If something fails or isn't clear, ask.
