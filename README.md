@@ -56,9 +56,13 @@ tinyfetch
 
 ## Extensibility & Plugins
 
-**tinyfetch** is fully extensible via custom plugins. It scans the `./plugins` directory for executable scripts or binaries (written in Bash, Python, Go, Node, etc.) and appends their output dynamically to the info card.
+**tinyfetch** is fully extensible via custom plugins. It scans the `./plugins` directory for executable scripts or binaries (written in Bash, Python, Go, Node, etc.) and appends their output dynamically to the dashboard.
 
-### Creating a Plugin
+It supports two types of plugins:
+1. **Simple Plugins** (located in `./plugins/`): Single-line status elements that append rows to the middle info card.
+2. **Extended Plugins** (located in `./plugins/extended/`): Multi-line, complex dashboards that render side-by-side in a separate third column (creating a 3-pane layout, or a 2-pane layout if `--no-ascii` is passed).
+
+### Creating a Simple Plugin
 
 1. Create an executable file inside the `./plugins/` directory:
    ```bash
@@ -67,8 +71,18 @@ tinyfetch
    ```
 2. Your script should output exactly one line in one of the following formats:
    - **Label format**: `Label: Value` (e.g. `Network: Connected`). `tinyfetch` will automatically colorize the label in blue.
-   - **Plain format**: `Value` (e.g. `Connected`). `tinyfetch` will automatically format it using the capitalized filename as the label (e.g. `my-plugin` becomes `My-plugin`).
+   - **Plain format**: `Value` (e.g. `Connected`). `tinyfetch` will automatically format it using the capitalized filename as the label.
 3. If a plugin needs to exit early or is not applicable, it should print nothing and exit with code `0`. Any plugin that produces empty output will be cleanly omitted from the dashboard.
+
+### Creating an Extended Plugin
+
+1. Create an executable file inside the `./plugins/extended/` directory:
+   ```bash
+   touch plugins/extended/my-dashboard.sh
+   chmod +x plugins/extended/my-dashboard.sh
+   ```
+2. Your script can output multiple lines. Both Shell and Go versions of `tinyfetch` will dynamically calculate widths and align the borders of the third pane symmetrically using rune-count calculations.
+3. If the script exits with `0` and prints nothing, the third column will be omitted and `tinyfetch` will fall back to the standard double-pane layout automatically.
 
 ### Included Plugins
 
@@ -81,6 +95,11 @@ The repository contains several useful out-of-the-box plugins under [plugins/](f
 - **Packages** (`packages.sh`): Lists installed packages (supports `pacman` and `paru`/`yay`).
 - **Weather** (`weather.sh`): Fetches temperature and sky status.
 - **Media Player** (`media.sh`): Shows currently playing song or media status.
+
+#### Extended Plugins ([plugins/extended/](file:///home/julesklord/Proyectos/repos/mini-fetch/plugins/extended)):
+- **Git Commit Graph** (`git_graph.sh`): Displays a beautiful 5-line local branch history tree visualization (or pulls remote status from the GitHub API if `GITHUB_TOKEN` is present).
+- **System Dashboard** (`sys_dashboard.sh`): Displays load averages and top memory-consuming processes.
+- **Weather Forecast** (`weather_forecast.sh`): Displays a multi-line weather forecast from `wttr.in`.
 
 ## Architecture
 

@@ -429,9 +429,48 @@ func main() {
 		}
 	}
 
+	// Scan ./plugins/extended directory
+	var extInfo []string
+	hasExt := false
+	if entries, err := os.ReadDir("./plugins/extended"); err == nil {
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				infoPath := "./plugins/extended/" + entry.Name()
+				fileInfo, err := entry.Info()
+				if err == nil && (fileInfo.Mode()&0111 != 0) {
+					out, err := exec.Command(infoPath).Output()
+					if err == nil {
+						rawOut := string(out)
+						if strings.TrimSpace(rawOut) != "" {
+							lines := strings.Split(rawOut, "\n")
+							// Remove trailing empty line caused by Split on final newline
+							if len(lines) > 0 && lines[len(lines)-1] == "" {
+								lines = lines[:len(lines)-1]
+							}
+							if len(lines) > 0 {
+								for _, line := range lines {
+									extInfo = append(extInfo, line)
+								}
+								extInfo = append(extInfo, "") // separator
+								hasExt = true
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	// Remove trailing empty line separator if present
+	if len(extInfo) > 0 && extInfo[len(extInfo)-1] == "" {
+		extInfo = extInfo[:len(extInfo)-1]
+	}
+
 	maxLines := len(info)
 	if !noASCII && len(logo) > maxLines {
 		maxLines = len(logo)
+	}
+	if hasExt && len(extInfo) > maxLines {
+		maxLines = len(extInfo)
 	}
 
 	// Calculate maximum logo raw length
@@ -459,54 +498,159 @@ func main() {
 		}
 	}
 
+	// Calculate maximum extended info raw length
+	extW := 0
+	if hasExt {
+		for _, line := range extInfo {
+			raw := stripANSI(line)
+			rawLen := utf8.RuneCountInString(raw)
+			if rawLen > extW {
+				extW = rawLen
+			}
+		}
+		if extW < 24 {
+			extW = 24
+		}
+	}
+
 	borderCol := lblue
 
-	if noASCII {
-		topLine := borderCol + "┌" + strings.Repeat("─", rightW+2) + "┐" + restore
-		botLine := borderCol + "└" + strings.Repeat("─", rightW+2) + "┘" + restore
-		fmt.Println(topLine)
-		for _, line := range info {
-			rawLen := utf8.RuneCountInString(stripANSI(line))
-			padCount := rightW - rawLen
-			padding := ""
-			if padCount > 0 {
-				padding = strings.Repeat(" ", padCount)
+	if !hasExt {
+		if noASCII {
+			// Case 1: Single pane (Info)
+			topLine := borderCol + "┌" + strings.Repeat("─", rightW+2) + "┐" + restore
+			botLine := borderCol + "└" + strings.Repeat("─", rightW+2) + "┘" + restore
+			fmt.Println(topLine)
+			for i := 0; i < maxLines; i++ {
+				rLine := ""
+				if i < len(info) {
+					rLine = info[i]
+				}
+				rRaw := utf8.RuneCountInString(stripANSI(rLine))
+				rPadCount := rightW - rRaw
+				rPadding := ""
+				if rPadCount > 0 {
+					rPadding = strings.Repeat(" ", rPadCount)
+				}
+				fmt.Printf("%s│%s %s%s %s│\n", borderCol, restore, rLine, rPadding, borderCol)
 			}
-			fmt.Printf("%s│%s %s%s %s│\n", borderCol, restore, line, padding, borderCol)
+			fmt.Println(botLine)
+		} else {
+			// Case 2: Double pane (Logo + Info)
+			topLine := borderCol + "┌" + strings.Repeat("─", leftW+2) + "┬" + strings.Repeat("─", rightW+2) + "┐" + restore
+			botLine := borderCol + "└" + strings.Repeat("─", leftW+2) + "┴" + strings.Repeat("─", rightW+2) + "┘" + restore
+			fmt.Println(topLine)
+			for i := 0; i < maxLines; i++ {
+				logoPrint := ""
+				if i < len(logo) {
+					logoPrint = logo[i]
+				}
+				lRaw := utf8.RuneCountInString(stripANSI(logoPrint))
+				lPadCount := leftW - lRaw
+				lPadding := ""
+				if lPadCount > 0 {
+					lPadding = strings.Repeat(" ", lPadCount)
+				}
+
+				infoPrint := ""
+				if i < len(info) {
+					infoPrint = info[i]
+				}
+				rRaw := utf8.RuneCountInString(stripANSI(infoPrint))
+				rPadCount := rightW - rRaw
+				rPadding := ""
+				if rPadCount > 0 {
+					rPadding = strings.Repeat(" ", rPadCount)
+				}
+
+				fmt.Printf("%s│%s %s%s %s│%s %s%s %s│\n",
+					borderCol, restore, logoPrint, lPadding,
+					borderCol, restore, infoPrint, rPadding,
+					borderCol)
+			}
+			fmt.Println(botLine)
 		}
-		fmt.Println(botLine)
 	} else {
-		topLine := borderCol + "┌" + strings.Repeat("─", leftW+2) + "┬" + strings.Repeat("─", rightW+2) + "┐" + restore
-		botLine := borderCol + "└" + strings.Repeat("─", leftW+2) + "┴" + strings.Repeat("─", rightW+2) + "┘" + restore
-		fmt.Println(topLine)
-		for i := 0; i < maxLines; i++ {
-			logoPrint := ""
-			if i < len(logo) {
-				logoPrint = logo[i]
-			}
-			lRaw := utf8.RuneCountInString(stripANSI(logoPrint))
-			lPadCount := leftW - lRaw
-			lPadding := ""
-			if lPadCount > 0 {
-				lPadding = strings.Repeat(" ", lPadCount)
-			}
+		if noASCII {
+			// Case 3: Double pane (Info + Extended)
+			topLine := borderCol + "┌" + strings.Repeat("─", rightW+2) + "┬" + strings.Repeat("─", extW+2) + "┐" + restore
+			botLine := borderCol + "└" + strings.Repeat("─", rightW+2) + "┴" + strings.Repeat("─", extW+2) + "┘" + restore
+			fmt.Println(topLine)
+			for i := 0; i < maxLines; i++ {
+				rLine := ""
+				if i < len(info) {
+					rLine = info[i]
+				}
+				rRaw := utf8.RuneCountInString(stripANSI(rLine))
+				rPadCount := rightW - rRaw
+				rPadding := ""
+				if rPadCount > 0 {
+					rPadding = strings.Repeat(" ", rPadCount)
+				}
 
-			infoPrint := ""
-			if i < len(info) {
-				infoPrint = info[i]
-			}
-			rRaw := utf8.RuneCountInString(stripANSI(infoPrint))
-			rPadCount := rightW - rRaw
-			rPadding := ""
-			if rPadCount > 0 {
-				rPadding = strings.Repeat(" ", rPadCount)
-			}
+				eLine := ""
+				if i < len(extInfo) {
+					eLine = extInfo[i]
+				}
+				eRaw := utf8.RuneCountInString(stripANSI(eLine))
+				ePadCount := extW - eRaw
+				ePadding := ""
+				if ePadCount > 0 {
+					ePadding = strings.Repeat(" ", ePadCount)
+				}
 
-			fmt.Printf("%s│%s %s%s %s│%s %s%s %s│\n",
-				borderCol, restore, logoPrint, lPadding,
-				borderCol, restore, infoPrint, rPadding,
-				borderCol)
+				fmt.Printf("%s│%s %s%s %s│%s %s%s %s│\n",
+					borderCol, restore, rLine, rPadding,
+					borderCol, restore, eLine, ePadding,
+					borderCol)
+			}
+			fmt.Println(botLine)
+		} else {
+			// Case 4: Triple pane (Logo + Info + Extended)
+			topLine := borderCol + "┌" + strings.Repeat("─", leftW+2) + "┬" + strings.Repeat("─", rightW+2) + "┬" + strings.Repeat("─", extW+2) + "┐" + restore
+			botLine := borderCol + "└" + strings.Repeat("─", leftW+2) + "┴" + strings.Repeat("─", rightW+2) + "┴" + strings.Repeat("─", extW+2) + "┘" + restore
+			fmt.Println(topLine)
+			for i := 0; i < maxLines; i++ {
+				logoPrint := ""
+				if i < len(logo) {
+					logoPrint = logo[i]
+				}
+				lRaw := utf8.RuneCountInString(stripANSI(logoPrint))
+				lPadCount := leftW - lRaw
+				lPadding := ""
+				if lPadCount > 0 {
+					lPadding = strings.Repeat(" ", lPadCount)
+				}
+
+				infoPrint := ""
+				if i < len(info) {
+					infoPrint = info[i]
+				}
+				rRaw := utf8.RuneCountInString(stripANSI(infoPrint))
+				rPadCount := rightW - rRaw
+				rPadding := ""
+				if rPadCount > 0 {
+					rPadding = strings.Repeat(" ", rPadCount)
+				}
+
+				ePrint := ""
+				if i < len(extInfo) {
+					ePrint = extInfo[i]
+				}
+				eRaw := utf8.RuneCountInString(stripANSI(ePrint))
+				ePadCount := extW - eRaw
+				ePadding := ""
+				if ePadCount > 0 {
+					ePadding = strings.Repeat(" ", ePadCount)
+				}
+
+				fmt.Printf("%s│%s %s%s %s│%s %s%s %s│%s %s%s %s│\n",
+					borderCol, restore, logoPrint, lPadding,
+					borderCol, restore, infoPrint, rPadding,
+					borderCol, restore, ePrint, ePadding,
+					borderCol)
+			}
+			fmt.Println(botLine)
 		}
-		fmt.Println(botLine)
 	}
 }

@@ -257,10 +257,49 @@ if [ -d "./plugins" ]; then
   shopt -u nullglob
 fi
 
+# Scan ./plugins/extended directory
+ext_info=()
+HAS_EXT=0
+if [ -d "./plugins/extended" ]; then
+  shopt -s nullglob
+  for p in ./plugins/extended/*; do
+    if [ -x "$p" ] && [ -f "$p" ]; then
+      has_content=0
+      # Use temporary array to hold this plugin's output
+      tmp_out=()
+      while IFS= read -r line || [ -n "$line" ]; do
+        tmp_out+=("$line")
+        has_content=1
+      done < <("$p" 2>/dev/null)
+      
+      if [ "$has_content" -eq 1 ]; then
+        for line in "${tmp_out[@]}"; do
+          ext_info+=("$line")
+        done
+        ext_info+=("") # separator
+        HAS_EXT=1
+      fi
+    fi
+  done
+  shopt -u nullglob
+  # Remove trailing empty line separator if present
+  if [ ${#ext_info[@]} -gt 0 ]; then
+    last_idx=$((${#ext_info[@]} - 1))
+    if [ -z "${ext_info[$last_idx]}" ]; then
+      unset "ext_info[$last_idx]"
+      # Re-index array after unset to avoid sparse index issues
+      ext_info=("${ext_info[@]}")
+    fi
+  fi
+fi
+
 # Print with novel card layout
 max_lines=${#info[@]}
 if [ "$NO_ASCII" -eq 0 ] && [ ${#logo[@]} -gt "$max_lines" ]; then
   max_lines=${#logo[@]}
+fi
+if [ "$HAS_EXT" -eq 1 ] && [ ${#ext_info[@]} -gt "$max_lines" ]; then
+  max_lines=${#ext_info[@]}
 fi
 
 # Calculate maximum logo raw length
@@ -284,6 +323,18 @@ for line in "${info[@]}"; do
   fi
 done
 
+# Calculate maximum extended info raw length
+ext_w=0
+if [ "$HAS_EXT" -eq 1 ]; then
+  for line in "${ext_info[@]}"; do
+    raw=$(printf "%s" "$line" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g')
+    if [ ${#raw} -gt $ext_w ]; then
+      ext_w=${#raw}
+    fi
+  done
+  [ $ext_w -lt 24 ] && ext_w=24
+fi
+
 strip_ansi() {
   printf "%s" "$1" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
 }
@@ -300,43 +351,86 @@ repeat_char() {
 
 BORDER_COLOR="$LBLUE"
 
-if [ "$NO_ASCII" -eq 1 ]; then
-  # Single pane card layout
-  top_line="${BORDER_COLOR}┌$(repeat_char "─" $((right_w + 2)))┐${RESTORE}"
-  bot_line="${BORDER_COLOR}└$(repeat_char "─" $((right_w + 2)))┘${RESTORE}"
-  
-  echo -e "$top_line"
-  for line in "${info[@]}"; do
-    raw_len=$(strip_ansi "$line")
-    pad=$((right_w - ${#raw_len}))
-    padding=""
-    [ $pad -gt 0 ] && padding=$(printf "%${pad}s" "")
-    echo -e "${BORDER_COLOR}│${RESTORE} ${line}${padding} ${BORDER_COLOR}│"
-  done
-  echo -e "$bot_line"
+if [ "$HAS_EXT" -eq 0 ]; then
+  if [ "$NO_ASCII" -eq 1 ]; then
+    # Case 1: Single pane (Info)
+    top_line="${BORDER_COLOR}┌$(repeat_char "─" $((right_w + 2)))┐${RESTORE}"
+    bot_line="${BORDER_COLOR}└$(repeat_char "─" $((right_w + 2)))┘${RESTORE}"
+    echo -e "$top_line"
+    for ((i=0; i<max_lines; i++)); do
+      r_line="${info[i]:-}"
+      r_raw=$(strip_ansi "$r_line")
+      r_pad=$((right_w - ${#r_raw}))
+      r_padding=""
+      [ $r_pad -gt 0 ] && r_padding=$(printf "%${r_pad}s" "")
+      echo -e "${BORDER_COLOR}│${RESTORE} ${r_line}${r_padding} ${BORDER_COLOR}│"
+    done
+    echo -e "$bot_line"
+  else
+    # Case 2: Double pane (Logo + Info)
+    top_line="${BORDER_COLOR}┌$(repeat_char "─" $((left_w + 2)))┬$(repeat_char "─" $((right_w + 2)))┐${RESTORE}"
+    bot_line="${BORDER_COLOR}└$(repeat_char "─" $((left_w + 2)))┴$(repeat_char "─" $((right_w + 2)))┘${RESTORE}"
+    echo -e "$top_line"
+    for ((i=0; i<max_lines; i++)); do
+      l_line="${logo[i]:-}"
+      r_line="${info[i]:-}"
+      l_raw=$(strip_ansi "$l_line")
+      l_pad=$((left_w - ${#l_raw}))
+      l_padding=""
+      [ $l_pad -gt 0 ] && l_padding=$(printf "%${l_pad}s" "")
+      r_raw=$(strip_ansi "$r_line")
+      r_pad=$((right_w - ${#r_raw}))
+      r_padding=""
+      [ $r_pad -gt 0 ] && r_padding=$(printf "%${r_pad}s" "")
+      echo -e "${BORDER_COLOR}│${RESTORE} ${l_line}${l_padding} ${BORDER_COLOR}│${RESTORE} ${r_line}${r_padding} ${BORDER_COLOR}│"
+    done
+    echo -e "$bot_line"
+  fi
 else
-  # Double pane card layout
-  top_line="${BORDER_COLOR}┌$(repeat_char "─" $((left_w + 2)))┬$(repeat_char "─" $((right_w + 2)))┐${RESTORE}"
-  bot_line="${BORDER_COLOR}└$(repeat_char "─" $((left_w + 2)))┴$(repeat_char "─" $((right_w + 2)))┘${RESTORE}"
-  
-  echo -e "$top_line"
-  for ((i=0; i<max_lines; i++)); do
-    l_line="${logo[i]:-}"
-    r_line="${info[i]:-}"
-    
-    l_raw=$(strip_ansi "$l_line")
-    l_pad=$((left_w - ${#l_raw}))
-    l_padding=""
-    [ $l_pad -gt 0 ] && l_padding=$(printf "%${l_pad}s" "")
-    
-    r_raw=$(strip_ansi "$r_line")
-    r_pad=$((right_w - ${#r_raw}))
-    r_padding=""
-    [ $r_pad -gt 0 ] && r_padding=$(printf "%${r_pad}s" "")
-    
-    echo -e "${BORDER_COLOR}│${RESTORE} ${l_line}${l_padding} ${BORDER_COLOR}│${RESTORE} ${r_line}${r_padding} ${BORDER_COLOR}│"
-  done
-  echo -e "$bot_line"
+  if [ "$NO_ASCII" -eq 1 ]; then
+    # Case 3: Double pane (Info + Extended)
+    top_line="${BORDER_COLOR}┌$(repeat_char "─" $((right_w + 2)))┬$(repeat_char "─" $((ext_w + 2)))┐${RESTORE}"
+    bot_line="${BORDER_COLOR}└$(repeat_char "─" $((right_w + 2)))┴$(repeat_char "─" $((ext_w + 2)))┘${RESTORE}"
+    echo -e "$top_line"
+    for ((i=0; i<max_lines; i++)); do
+      r_line="${info[i]:-}"
+      e_line="${ext_info[i]:-}"
+      r_raw=$(strip_ansi "$r_line")
+      r_pad=$((right_w - ${#r_raw}))
+      r_padding=""
+      [ $r_pad -gt 0 ] && r_padding=$(printf "%${r_pad}s" "")
+      e_raw=$(strip_ansi "$e_line")
+      e_pad=$((ext_w - ${#e_raw}))
+      e_padding=""
+      [ $e_pad -gt 0 ] && e_padding=$(printf "%${e_pad}s" "")
+      echo -e "${BORDER_COLOR}│${RESTORE} ${r_line}${r_padding} ${BORDER_COLOR}│${RESTORE} ${e_line}${e_padding} ${BORDER_COLOR}│"
+    done
+    echo -e "$bot_line"
+  else
+    # Case 4: Triple pane (Logo + Info + Extended)
+    top_line="${BORDER_COLOR}┌$(repeat_char "─" $((left_w + 2)))┬$(repeat_char "─" $((right_w + 2)))┬$(repeat_char "─" $((ext_w + 2)))┐${RESTORE}"
+    bot_line="${BORDER_COLOR}└$(repeat_char "─" $((left_w + 2)))┴$(repeat_char "─" $((right_w + 2)))┴$(repeat_char "─" $((ext_w + 2)))┘${RESTORE}"
+    echo -e "$top_line"
+    for ((i=0; i<max_lines; i++)); do
+      l_line="${logo[i]:-}"
+      r_line="${info[i]:-}"
+      e_line="${ext_info[i]:-}"
+      l_raw=$(strip_ansi "$l_line")
+      l_pad=$((left_w - ${#l_raw}))
+      l_padding=""
+      [ $l_pad -gt 0 ] && l_padding=$(printf "%${l_pad}s" "")
+      r_raw=$(strip_ansi "$r_line")
+      r_pad=$((right_w - ${#r_raw}))
+      r_padding=""
+      [ $r_pad -gt 0 ] && r_padding=$(printf "%${r_pad}s" "")
+      e_raw=$(strip_ansi "$e_line")
+      e_pad=$((ext_w - ${#e_raw}))
+      e_padding=""
+      [ $e_pad -gt 0 ] && e_padding=$(printf "%${e_pad}s" "")
+      echo -e "${BORDER_COLOR}│${RESTORE} ${l_line}${l_padding} ${BORDER_COLOR}│${RESTORE} ${r_line}${r_padding} ${BORDER_COLOR}│${RESTORE} ${e_line}${e_padding} ${BORDER_COLOR}│"
+    done
+    echo -e "$bot_line"
+  fi
 fi
 
 exit 0

@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.0 - Multi-pane Layout & Extended Plugins
+- Designed and implemented a flexible layout system that dynamically scales from 1-pane to a 2-pane or 3-pane dashboard based on active assets and plugins.
+- Created a new directory `plugins/extended/` to store multi-line, complex plugins.
+- Built 3 out-of-the-box extended plugins:
+  - Weather Forecast (`plugins/extended/weather_forecast.sh`): Multi-line weather forecast query from wttr.in.
+  - Git Commit Graph (`plugins/extended/git_graph.sh`): Displays a beautiful branch history visualization (local or via GitHub API if a token is present).
+  - System Dashboard (`plugins/extended/sys_dashboard.sh`): Displays load averages and top memory-consuming processes.
+- Enhanced both Shell (`scripts/tinyfetch.sh`) and Go (`cmd/tinyfetch/main.go`) codebases to align, size, and wrap multi-pane boundaries symmetrically using rune counts.
+
 ## 0.2.4 - Developer & System plugins
 - Created `plugins/battery.sh` to report battery level and charging status across Linux and macOS.
 - Created `plugins/ip.sh` to fetch and show both internal IP and public IP addresses (with a 1s connection timeout).

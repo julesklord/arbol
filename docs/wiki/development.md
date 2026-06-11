@@ -22,18 +22,25 @@ This document guides developers on local setup, running tests, and creating cust
 
 ## Creating Custom Plugins
 
-`tinyfetch` scans the `./plugins` directory for executable scripts or binaries. You can write plugins in Bash, Python, Go, Node, or any other scripting language.
+`tinyfetch` scans the `./plugins` directory and its `extended/` subdirectory for executable scripts or binaries. You can write plugins in Bash, Python, Go, Node, or any other scripting language.
 
-### Plugin Requirements
+### Simple Plugins
 
 1. **Location**: Place your script under `./plugins/` (e.g., `plugins/battery.sh`).
 2. **Executability**: The file must be executable. Run `chmod +x plugins/my-plugin` to enable it.
 3. **Stdout Format**: The plugin must output exactly one line. It can follow one of two patterns:
    - **Label format**: `Label: Value` (e.g., `Git: main`). If a colon is detected, the key (`Git`) will be printed in blue, and the value (`main`) in default colors.
    - **Plain format**: `Value` (e.g., `☀️ +20°C`). The tool will automatically use the capitalized filename as the label (e.g., `weather.sh` becomes `Weather: ☀️ +20°C`).
-4. **Error Handling**: If the plugin fails (e.g., no internet, missing tools), it must exit silently (`exit 0`) and print nothing. If a plugin prints nothing, the row is omitted from the dashboard.
+4. **Error Handling**: If the plugin fails, it must exit silently (`exit 0`) and print nothing. If a plugin prints nothing, the row is omitted from the dashboard.
 
-### Example Plugin (Shell)
+### Extended Plugins
+
+1. **Location**: Place your script under `./plugins/extended/` (e.g., `plugins/extended/sys_dashboard.sh`).
+2. **Executability**: Must be executable (`chmod +x`).
+3. **Stdout Format**: Can output multiple lines. Both Shell and Go versions of `tinyfetch` will dynamically calculate widths and align the borders of the third pane symmetrically.
+4. **Error Handling**: If the plugin fails or is not applicable, it must exit silently (`exit 0`) and print nothing. If all extended plugins print nothing, the third column will be cleanly omitted from the output.
+
+### Example Simple Plugin (Shell)
 
 `plugins/battery.sh`:
 ```bash
