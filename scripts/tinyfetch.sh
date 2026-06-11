@@ -278,7 +278,7 @@ DISTRO_ID=$(get_distro_id)
 
 # Find ASCII file path
 ASCII_FILE=""
-for path in "./ascii/${DISTRO_ID}.txt" "/usr/local/share/tinyfetch/ascii/${DISTRO_ID}.txt" "/usr/share/tinyfetch/ascii/${DISTRO_ID}.txt"; do
+for path in "./ascii/${DISTRO_ID}.txt" "$HOME/.local/share/tinyfetch/ascii/${DISTRO_ID}.txt" "/usr/local/share/tinyfetch/ascii/${DISTRO_ID}.txt" "/usr/share/tinyfetch/ascii/${DISTRO_ID}.txt"; do
   if [ -f "$path" ]; then
     ASCII_FILE="$path"
     break
@@ -291,7 +291,7 @@ if [ -z "$ASCII_FILE" ]; then
   if [ "$OS_TYPE" = "Darwin" ]; then
     fallback_name="darwin"
   fi
-  for path in "./ascii/${fallback_name}.txt" "/usr/local/share/tinyfetch/ascii/${fallback_name}.txt" "/usr/share/tinyfetch/ascii/${fallback_name}.txt"; do
+  for path in "./ascii/${fallback_name}.txt" "$HOME/.local/share/tinyfetch/ascii/${fallback_name}.txt" "/usr/local/share/tinyfetch/ascii/${fallback_name}.txt" "/usr/share/tinyfetch/ascii/${fallback_name}.txt"; do
     if [ -f "$path" ]; then
       ASCII_FILE="$path"
       break

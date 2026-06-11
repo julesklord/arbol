@@ -493,9 +493,11 @@ func main() {
 	var logo []string
 	if !noASCII {
 		distroID := getDistroID()
+		homeDir, _ := os.UserHomeDir()
 		// Paths to search
 		searchPaths := []string{
 			"./ascii/" + distroID + ".txt",
+			homeDir + "/.local/share/tinyfetch/ascii/" + distroID + ".txt",
 			"/usr/local/share/tinyfetch/ascii/" + distroID + ".txt",
 			"/usr/share/tinyfetch/ascii/" + distroID + ".txt",
 		}
@@ -516,6 +518,7 @@ func main() {
 			}
 			fallbackPaths := []string{
 				"./ascii/" + fallback + ".txt",
+				homeDir + "/.local/share/tinyfetch/ascii/" + fallback + ".txt",
 				"/usr/local/share/tinyfetch/ascii/" + fallback + ".txt",
 				"/usr/share/tinyfetch/ascii/" + fallback + ".txt",
 			}
