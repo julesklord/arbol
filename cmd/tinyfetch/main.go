@@ -31,10 +31,19 @@ func getTerminalWidth() int {
 }
 
 func truncateANSI(s string, limit int) string {
+	raw := stripANSI(s)
+	if utf8.RuneCountInString(raw) <= limit {
+		return s
+	}
+
 	var builder strings.Builder
 	visualLen := 0
 	inEscape := false
 	restoreCode := "\033[0m"
+	targetLen := limit - 1
+	if targetLen < 0 {
+		targetLen = 0
+	}
 
 	for i := 0; i < len(s); i++ {
 		if s[i] == '\033' {
@@ -50,16 +59,14 @@ func truncateANSI(s string, limit int) string {
 			continue
 		}
 
-		if visualLen < limit {
+		if visualLen < targetLen {
 			r, size := utf8.DecodeRuneInString(s[i:])
 			builder.WriteRune(r)
 			i += size - 1
 			visualLen++
 		}
 	}
-	if visualLen >= limit {
-		builder.WriteString("…")
-	}
+	builder.WriteString("…")
 	builder.WriteString(restoreCode)
 	return builder.String()
 }

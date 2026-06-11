@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.3 - Box Border Alignment Fix
+- Fixed a layout misalignment bug in the Go implementation of `truncateANSI` where the ellipsis character `…` was appended without subtracting its visual width from the limit. This caused truncated lines to be 1 character wider than expected, pushing the vertical borders outward and deforming the card layout.
+
 ## 0.3.2 - Proportional Layout Scaling
 - Fixed premature single-pane fallback behavior. The side-by-side logo and info columns are now fully preserved by default using proportional column scaling down to 65, 45, and 41 terminal columns, rather than aggressively dropping logo panels.
 
