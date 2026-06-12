@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.7 - Code Modularization, Unit Tests & Plugin Timeouts
+- Refactored Go implementation in `cmd/tinyfetch/` into multiple single-responsibility files (`main.go`, `render.go`, `sysinfo.go`, `export.go`).
+- Created Go table-driven unit test suite in `cmd/tinyfetch/main_test.go` checking string manipulation and unicode width functions.
+- Added 2-second timeout limits to simple and extended plugin executions in both Go and Bash.
+- Highly optimized visual length calculations and ANSI color stripping in Bash script by replacing external `sed` processes with native string patterns and regular expression loops.
+
+## 0.3.6 - Central Column Scaling & Layout Tweaks
+- Increased default central column width proportion to 60% of available terminal width.
+- Tuned column width scaling for extended panel 3 to split 50/50 with the central pane.
+
+## 0.3.5 - Terminal Scaling & Paths Expansion
+- Expanded columns to fill the full terminal width by default instead of keeping a static maximum layout size.
+- Added user local share directory (`~/.local/share/tinyfetch/ascii/`) to logo text search paths.
+
+## 0.3.4 - Weather Alignment Correction
+- Fixed box border misalignment when displaying wttr.in responses by utilizing corrected visual length calculations.
+
 ## 0.3.3 - Box Border Alignment Fix
 - Fixed a layout misalignment bug in the Go implementation of `truncateANSI` where the ellipsis character `…` was appended without subtracting its visual width from the limit. This caused truncated lines to be 1 character wider than expected, pushing the vertical borders outward and deforming the card layout.
 

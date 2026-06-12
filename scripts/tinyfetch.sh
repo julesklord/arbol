@@ -21,6 +21,32 @@ for a in "$@"; do
   esac
 done
 
+run_with_timeout() {
+  local timeout_sec="$1"
+  shift
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "${timeout_sec}s" "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    gtimeout "${timeout_sec}s" "$@"
+  else
+    # Fallback: run in background and monitor
+    "$@" &
+    local pid=$!
+    local count=0
+    local max_count=$((timeout_sec * 10))
+    while kill -0 "$pid" 2>/dev/null; do
+      if [ "$count" -ge "$max_count" ]; then
+        kill -9 "$pid" 2>/dev/null
+        wait "$pid" 2>/dev/null
+        return 124
+      fi
+      sleep 0.1
+      count=$((count + 1))
+    done
+    wait "$pid"
+  fi
+}
+
 # Structured output formatters
 print_json() {
   local host_esc
@@ -347,7 +373,7 @@ if [ -d "./plugins" ]; then
   shopt -s nullglob
   for p in ./plugins/*; do
     if [ -x "$p" ] && [ -f "$p" ]; then
-      plugin_out=$("$p" 2>/dev/null | head -n 1)
+      plugin_out=$(run_with_timeout 2 "$p" 2>/dev/null | head -n 1)
       if [ -n "$plugin_out" ]; then
         if [[ "$plugin_out" == *":"* ]]; then
           p_key=$(echo "$plugin_out" | cut -d: -f1)
@@ -391,7 +417,7 @@ if [ "$MINIMAL" -eq 0 ] && [ -d "./plugins/extended" ]; then
       while IFS= read -r line || [ -n "$line" ]; do
         tmp_out+=("$line")
         has_content=1
-      done < <("$p" 2>/dev/null)
+      done < <(run_with_timeout 2 "$p" 2>/dev/null)
       
       if [ "$has_content" -eq 1 ]; then
         for line in "${tmp_out[@]}"; do
@@ -415,12 +441,14 @@ if [ "$MINIMAL" -eq 0 ] && [ -d "./plugins/extended" ]; then
 fi
 
 visual_len() {
-  local str="$1"
-  local clean
-  clean=$(printf "%s" "$str" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g')
-  clean=$(printf "%s" "$clean" | sed "s/$(printf '\ufe0f')//g" | sed "s/$(printf '\u200d')//g")
-  clean=$(printf "%s" "$clean" | sed "s/[☀️⚡⛅☁🌧🌦⛈🌩🌨❄🌫💨🌬🌪☔🌀🌁🌃🌄🌅🌇🌙🌕🌑]/xx/g")
-  echo "${#clean}"
+  local s="$1"
+  local regex=$'\e\\[[0-9;]*[a-zA-Z]'
+  while [[ "$s" =~ $regex ]]; do
+    s="${s//${BASH_REMATCH[0]}/}"
+  done
+  s="${s//[$'\ufe0f'$'\u200d']/}"
+  s="${s//[☀️⚡⛅☁🌧🌦⛈🌩🌨❄🌫💨🌬🌪☔🌀🌁🌃🌄🌅🌇🌙🌕🌑]/xx}"
+  echo "${#s}"
 }
 
 # Get terminal width
@@ -512,7 +540,12 @@ else
 fi
 
 strip_ansi() {
-  printf "%s" "$1" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
+  local s="$1"
+  local regex=$'\e\\[[0-9;]*[a-zA-Z]'
+  while [[ "$s" =~ $regex ]]; do
+    s="${s//${BASH_REMATCH[0]}/}"
+  done
+  echo "$s"
 }
 
 truncate_ansi() {
@@ -524,7 +557,7 @@ truncate_ansi() {
     echo "$str"
   else
     local stripped
-    stripped=$(printf "%s" "$str" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g')
+    stripped=$(strip_ansi "$str")
     echo -e "${stripped:0:$((limit - 1))}…${RESTORE}"
   fi
 }
