@@ -216,7 +216,7 @@ func getMemory() string {
 }
 
 func getDisk() string {
-	out := runCommand("df", "-h", "/")
+	out := runCommand("df", "-Ph", "/")
 	if out != "" {
 		lines := strings.Split(out, "\n")
 		if len(lines) >= 2 {

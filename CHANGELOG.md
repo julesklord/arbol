@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.8 - Robust ANSI Truncation, CJK Length & XML Sanitization
+- Implemented robust, color-preserving `truncate_ansi` in Bash script to prevent border color loss.
+- Added full support for double-width CJK characters, emojis, and zero-width markers in Bash `visual_len`.
+- Added strict XML tag sanitization and escaping for both Go and Bash versions.
+- Optimized execution paths to bypass visual layout computations when structured formats (JSON/XML/TXT) are requested.
+- Implemented process group cleanup in Bash to prevent background processes from leaking on plugin timeouts.
+- Allowed help arguments (`-h` / `--help`) at any position in the arguments list in Bash.
+- Resolved potential crash conditions under strict mode (`set -e`) by adding fallback operations for missing os-release parameters.
+- Clamped progress bar metrics in both versions to prevent drawing overflows.
+
 ## 0.3.7 - Code Modularization, Unit Tests & Plugin Timeouts
 - Refactored Go implementation in `cmd/tinyfetch/` into multiple single-responsibility files (`main.go`, `render.go`, `sysinfo.go`, `export.go`).
 - Created Go table-driven unit test suite in `cmd/tinyfetch/main_test.go` checking string manipulation and unicode width functions.

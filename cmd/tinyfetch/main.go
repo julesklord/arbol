@@ -43,8 +43,67 @@ func main() {
 	}
 	cpuVal := getCPU()
 
-	// Memory & Progress Bar
 	memRaw := getMemory()
+	diskRaw := getDisk()
+
+	var pluginKeys []string
+	var pluginVals []string
+
+	// Scan ./plugins directory
+	if entries, err := os.ReadDir("./plugins"); err == nil {
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				infoPath := "./plugins/" + entry.Name()
+				fileInfo, err := entry.Info()
+				if err == nil && (fileInfo.Mode()&0111 != 0) {
+					out := runCommandWithTimeout(2*time.Second, infoPath)
+					if out != "" {
+						lines := strings.Split(out, "\n")
+						pluginOut := strings.TrimSpace(lines[0])
+						if pluginOut != "" {
+							if strings.Contains(pluginOut, ":") {
+								parts := strings.SplitN(pluginOut, ":", 2)
+								k := parts[0]
+								v := strings.TrimSpace(parts[1])
+								pluginKeys = append(pluginKeys, k)
+								pluginVals = append(pluginVals, v)
+							} else {
+								name := entry.Name()
+								if idx := strings.Index(name, "."); idx != -1 {
+									name = name[:idx]
+								}
+								if len(name) > 0 {
+									name = strings.ToUpper(name[:1]) + name[1:]
+								}
+								pluginKeys = append(pluginKeys, name)
+								pluginVals = append(pluginVals, pluginOut)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Intercept output format flag early
+	if outputFmt != "" {
+		switch outputFmt {
+		case "json":
+			printJSON(hostname, osName, kernel, uptimeVal, shellVal, cpuVal, memRaw, diskRaw, pluginKeys, pluginVals)
+			os.Exit(0)
+		case "xml":
+			printXML(hostname, osName, kernel, uptimeVal, shellVal, cpuVal, memRaw, diskRaw, pluginKeys, pluginVals)
+			os.Exit(0)
+		case "txt":
+			printTXT(hostname, osName, kernel, uptimeVal, shellVal, cpuVal, memRaw, diskRaw, pluginKeys, pluginVals)
+			os.Exit(0)
+		default:
+			fmt.Fprintf(os.Stderr, "Unknown output format: %s\n", outputFmt)
+			os.Exit(1)
+		}
+	}
+
+	// Memory & Progress Bar
 	memVal := memRaw
 	if strings.Contains(memRaw, "%") {
 		pctPart := strings.Split(memRaw, "%")[0]
@@ -54,7 +113,6 @@ func main() {
 	}
 
 	// Disk & Progress Bar
-	diskRaw := getDisk()
 	diskVal := diskRaw
 	if strings.Contains(diskRaw, "%") {
 		idx := strings.Index(diskRaw, "%")
@@ -166,63 +224,8 @@ func main() {
 		lblue + "Disk:" + restore + "   " + diskVal,
 	}
 
-	var pluginKeys []string
-	var pluginVals []string
-
-	// Scan ./plugins directory
-	if entries, err := os.ReadDir("./plugins"); err == nil {
-		for _, entry := range entries {
-			if !entry.IsDir() {
-				infoPath := "./plugins/" + entry.Name()
-				fileInfo, err := entry.Info()
-				if err == nil && (fileInfo.Mode()&0111 != 0) {
-					out := runCommandWithTimeout(2*time.Second, infoPath)
-					if out != "" {
-						lines := strings.Split(out, "\n")
-						pluginOut := strings.TrimSpace(lines[0])
-						if pluginOut != "" {
-							if strings.Contains(pluginOut, ":") {
-								parts := strings.SplitN(pluginOut, ":", 2)
-								k := parts[0]
-								v := strings.TrimSpace(parts[1])
-								pluginKeys = append(pluginKeys, k)
-								pluginVals = append(pluginVals, v)
-								info = append(info, lblue+k+":"+restore+" "+v)
-							} else {
-								name := entry.Name()
-								if idx := strings.Index(name, "."); idx != -1 {
-									name = name[:idx]
-								}
-								if len(name) > 0 {
-									name = strings.ToUpper(name[:1]) + name[1:]
-								}
-								pluginKeys = append(pluginKeys, name)
-								pluginVals = append(pluginVals, pluginOut)
-								info = append(info, lblue+name+":"+restore+" "+pluginOut)
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Intercept output format flag early
-	if outputFmt != "" {
-		switch outputFmt {
-		case "json":
-			printJSON(hostname, osName, kernel, uptimeVal, shellVal, cpuVal, memRaw, diskRaw, pluginKeys, pluginVals)
-			os.Exit(0)
-		case "xml":
-			printXML(hostname, osName, kernel, uptimeVal, shellVal, cpuVal, memRaw, diskRaw, pluginKeys, pluginVals)
-			os.Exit(0)
-		case "txt":
-			printTXT(hostname, osName, kernel, uptimeVal, shellVal, cpuVal, memRaw, diskRaw, pluginKeys, pluginVals)
-			os.Exit(0)
-		default:
-			fmt.Fprintf(os.Stderr, "Unknown output format: %s\n", outputFmt)
-			os.Exit(1)
-		}
+	for i := 0; i < len(pluginKeys); i++ {
+		info = append(info, lblue+pluginKeys[i]+":"+restore+" "+pluginVals[i])
 	}
 
 	// Scan ./plugins/extended directory

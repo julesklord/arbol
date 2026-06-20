@@ -110,6 +110,9 @@ func stripANSI(s string) string {
 }
 
 func getBar(pct int) string {
+	if pct < 0 {
+		pct = 0
+	}
 	filled := pct / 10
 	if filled > 10 {
 		filled = 10

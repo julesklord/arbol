@@ -2,11 +2,7 @@
 # Robust and portable tinyfetch script
 set -euo pipefail
 
-if [ "${1-}" = "--help" ] || [ "${1-}" = "-h" ]; then
-  echo "Usage: $0 [--no-ascii] [--minimal] [--noframe] [--output=json|xml|txt]"
-  exit 0
-fi
-
+# Argument Parsing
 NO_ASCII=0
 MINIMAL=0
 NO_FRAME=0
@@ -18,8 +14,23 @@ for a in "$@"; do
     --minimal)  MINIMAL=1 ;;
     --noframe)  NO_FRAME=1 ;;
     --output=*) OUTPUT="${a#*=}" ;;
+    -h|--help)
+      echo "Usage: $0 [--no-ascii] [--minimal] [--noframe] [--output=json|xml|txt]"
+      exit 0
+      ;;
   esac
 done
+
+# Safe tracking of background process
+declare -g CURRENT_BG_PID=""
+
+cleanup_bg() {
+  if [ -n "$CURRENT_BG_PID" ]; then
+    kill -9 "$CURRENT_BG_PID" 2>/dev/null || true
+    wait "$CURRENT_BG_PID" 2>/dev/null || true
+  fi
+}
+trap cleanup_bg EXIT SIGINT SIGTERM
 
 run_with_timeout() {
   local timeout_sec="$1"
@@ -32,39 +43,131 @@ run_with_timeout() {
     # Fallback: run in background and monitor
     "$@" &
     local pid=$!
+    CURRENT_BG_PID="$pid"
     local count=0
     local max_count=$((timeout_sec * 10))
     while kill -0 "$pid" 2>/dev/null; do
       if [ "$count" -ge "$max_count" ]; then
         kill -9 "$pid" 2>/dev/null
         wait "$pid" 2>/dev/null
+        CURRENT_BG_PID=""
         return 124
       fi
       sleep 0.1
       count=$((count + 1))
     done
     wait "$pid"
+    CURRENT_BG_PID=""
   fi
 }
 
+# ANSI helper functions
+strip_ansi() {
+  local s="$1"
+  local regex=$'\e\\[[0-9;]*[a-zA-Z]'
+  while [[ "$s" =~ $regex ]]; do
+    s="${s//${BASH_REMATCH[0]}/}"
+  done
+  echo "$s"
+}
+
+visual_len() {
+  local s="$1"
+  local regex=$'\e\\[[0-9;]*[a-zA-Z]'
+  while [[ "$s" =~ $regex ]]; do
+    s="${s//${BASH_REMATCH[0]}/}"
+  done
+  s="${s//[$'\ufe0f'$'\u200d'$'\u200c'$'\u0300'-$'\u036f']/}"
+  s="${s//[$'\u2e80'-$'\u2fdf'$'\u3000'-$'\u9fff'$'\uf900'-$'\ufaff'$'\uff01'-$'\uff60'$'\uffe0'-$'\uffe6'$'\u2600'-$'\u27bf'$'\U0001f000'-$'\U0001faff']/xx}"
+  echo "${#s}"
+}
+
+truncate_ansi() {
+  local str="$1"
+  local limit="$2"
+  local vlen
+  vlen=$(visual_len "$str")
+  if [ "$vlen" -le "$limit" ]; then
+    echo "$str"
+    return
+  fi
+
+  local target_len=$((limit - 1))
+  [ $target_len -lt 0 ] && target_len=0
+
+  local out=""
+  local cur_len=0
+  local in_escape=0
+  local len=${#str}
+  local RESTORE=$'\e[0m'
+
+  for ((i=0; i<len; i++)); do
+    local char="${str:i:1}"
+    if [ "$char" = $'\e' ]; then
+      in_escape=1
+      out="${out}${char}"
+      continue
+    fi
+    if [ $in_escape -eq 1 ]; then
+      out="${out}${char}"
+      if [[ "$char" =~ [a-zA-Z] ]]; then
+        in_escape=0
+      fi
+      continue
+    fi
+
+    # Width of character
+    local w=1
+    case "$char" in
+      [$'\ufe0f'$'\u200d'$'\u200c'$'\u0300'-$'\u036f'])
+        w=0
+        ;;
+      [$'\u2e80'-$'\u2fdf'$'\u3000'-$'\u9fff'$'\uf900'-$'\ufaff'$'\uff01'-$'\uff60'$'\uffe0'-$'\uffe6'$'\u2600'-$'\u27bf'$'\U0001f000'-$'\U0001faff'])
+        w=2
+        ;;
+      *)
+        w=1
+        ;;
+    esac
+
+    if [ $((cur_len + w)) -le $target_len ]; then
+      out="${out}${char}"
+      cur_len=$((cur_len + w))
+    fi
+  done
+  echo -e "${out}…${RESTORE}"
+}
+
+repeat_char() {
+  local char="$1"
+  local count="$2"
+  local out=""
+  for ((k=0; k<count; k++)); do
+    out="${out}${char}"
+  done
+  echo -n "$out"
+}
+
 # Structured output formatters
+escape_xml() {
+  local s="$1"
+  s="${s//&/&amp;}"
+  s="${s//</&lt;}"
+  s="${s//>/&gt;}"
+  s="${s//\"/&quot;}"
+  s="${s//\'/&apos;}"
+  echo "$s"
+}
+
 print_json() {
-  local host_esc
-  host_esc=$(printf "%s" "$HOST" | sed 's/"/\\"/g')
-  local os_esc
-  os_esc=$(printf "%s" "$OS_NAME" | sed 's/"/\\"/g')
-  local kernel_esc
-  kernel_esc=$(printf "%s" "$KERNEL" | sed 's/"/\\"/g')
-  local uptime_esc
-  uptime_esc=$(printf "%s" "$UPTIME" | sed 's/"/\\"/g')
-  local shell_esc
-  shell_esc=$(printf "%s" "$SHELL_VAL" | sed 's/"/\\"/g')
-  local cpu_esc
-  cpu_esc=$(printf "%s" "$CPU" | sed 's/"/\\"/g')
-  local mem_esc
-  mem_esc=$(printf "%s" "$MEM_RAW" | sed 's/"/\\"/g')
-  local disk_esc
-  disk_esc=$(printf "%s" "$DISK_RAW" | sed 's/"/\\"/g')
+  local host_esc="${HOST//\"/\\\"}"
+  local os_esc="${OS_NAME//\"/\\\"}"
+  local kernel_esc="${KERNEL//\"/\\\"}"
+  local uptime_esc="${UPTIME//\"/\\\"}"
+  local shell_esc="${SHELL_VAL//\"/\\\"}"
+  local cpu_esc="${CPU//\"/\\\"}"
+  local mem_esc="${MEM_RAW//\"/\\\"}"
+  local disk_esc="${DISK_RAW//\"/\\\"}"
 
   printf "{\n"
   printf '  "host": "%s",\n' "$host_esc"
@@ -82,10 +185,10 @@ print_json() {
     for ((i=0; i<${#plugin_keys[@]}; i++)); do
       local k="${plugin_keys[i]}"
       local v="${plugin_vals[i]}"
-      local v_esc
-      v_esc=$(printf "%s" "$v" | sed 's/"/\\"/g' | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g')
-      local k_esc
-      k_esc=$(printf "%s" "$k" | sed 's/"/\\"/g')
+      local v_clean
+      v_clean=$(strip_ansi "$v")
+      local v_esc="${v_clean//\"/\\\"}"
+      local k_esc="${k//\"/\\\"}"
       printf '    "%s": "%s"' "$k_esc" "$v_esc"
       if [ $i -lt $((${#plugin_keys[@]} - 1)) ]; then
         printf ",\n"
@@ -102,24 +205,24 @@ print_json() {
 
 print_xml() {
   printf "<tinyfetch>\n"
-  printf "  <host>%s</host>\n" "$HOST"
-  printf "  <os>%s</os>\n" "$OS_NAME"
-  printf "  <kernel>%s</kernel>\n" "$KERNEL"
-  printf "  <uptime>%s</uptime>\n" "$UPTIME"
-  printf "  <shell>%s</shell>\n" "$SHELL_VAL"
-  printf "  <cpu>%s</cpu>\n" "$CPU"
-  printf "  <memory>%s</memory>\n" "$MEM_RAW"
-  printf "  <disk>%s</disk>\n" "$DISK_RAW"
+  printf "  <host>%s</host>\n" "$(escape_xml "$HOST")"
+  printf "  <os>%s</os>\n" "$(escape_xml "$OS_NAME")"
+  printf "  <kernel>%s</kernel>\n" "$(escape_xml "$KERNEL")"
+  printf "  <uptime>%s</uptime>\n" "$(escape_xml "$UPTIME")"
+  printf "  <shell>%s</shell>\n" "$(escape_xml "$SHELL_VAL")"
+  printf "  <cpu>%s</cpu>\n" "$(escape_xml "$CPU")"
+  printf "  <memory>%s</memory>\n" "$(escape_xml "$MEM_RAW")"
+  printf "  <disk>%s</disk>\n" "$(escape_xml "$DISK_RAW")"
   if [ ${#plugin_keys[@]} -gt 0 ]; then
     printf "  <plugins>\n"
     for ((i=0; i<${#plugin_keys[@]}; i++)); do
       local k="${plugin_keys[i]}"
       local v="${plugin_vals[i]}"
       local v_clean
-      v_clean=$(printf "%s" "$v" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g')
-      local tag
-      tag=$(echo "$k" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g')
-      printf "    <%s>%s</%s>\n" "$tag" "$v_clean" "$tag"
+      v_clean=$(strip_ansi "$v")
+      local tag="${k,,}"
+      tag="${tag//[^a-z0-9]/_}"
+      printf "    <%s>%s</%s>\n" "$tag" "$(escape_xml "$v_clean")" "$tag"
     done
     printf "  </plugins>\n"
   fi
@@ -139,12 +242,12 @@ print_txt() {
     local k="${plugin_keys[i]}"
     local v="${plugin_vals[i]}"
     local v_clean
-    v_clean=$(printf "%s" "$v" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g')
+    v_clean=$(strip_ansi "$v")
     printf "%s: %s\n" "$k" "$v_clean"
   done
 }
 
-# Detection of OS
+# OS Type detection
 OS_TYPE=$(uname -s)
 
 # Helper functions for portable resource gathering
@@ -157,7 +260,7 @@ get_os_name() {
     fi
   else
     if [ -f /etc/os-release ]; then
-      grep '^PRETTY_NAME' /etc/os-release | cut -d= -f2 | tr -d '"'
+      grep '^PRETTY_NAME' /etc/os-release | cut -d= -f2 | tr -d '"' || echo "Linux"
     else
       echo "$OS_TYPE"
     fi
@@ -229,22 +332,24 @@ get_memory() {
   fi
 }
 
-# Colors
-ESC=$(printf '\033')
-RESTORE="${ESC}[0m"
-LBLUE="${ESC}[01;34m"
-LYELLOW="${ESC}[01;33m"
-LCYAN="${ESC}[01;36m"
-WHITE="${ESC}[01;37m"
-LRED="${ESC}[01;31m"
-LGREEN="${ESC}[01;32m"
-LIGHTGRAY="${ESC}[00;37m"
+get_distro_id() {
+  if [ "$OS_TYPE" = "Darwin" ]; then
+    echo "darwin"
+  elif [ -f /etc/os-release ]; then
+    local id
+    id=$(grep '^ID=' /etc/os-release | cut -d= -f2 | tr -d '"' || echo "linux")
+    echo "${id:-linux}"
+  else
+    echo "linux"
+  fi
+}
 
 # Progress Bar Helper
 get_bar() {
   local pct=$1
   local filled=$((pct / 10))
   [ $filled -gt 10 ] && filled=10
+  [ $filled -lt 0 ] && filled=0
   local empty=$((10 - filled))
   local bar=""
   
@@ -263,6 +368,17 @@ get_bar() {
   echo "$bar"
 }
 
+# Colors
+ESC=$(printf '\033')
+RESTORE="${ESC}[0m"
+LBLUE="${ESC}[01;34m"
+LYELLOW="${ESC}[01;33m"
+LCYAN="${ESC}[01;36m"
+WHITE="${ESC}[01;37m"
+LRED="${ESC}[01;31m"
+LGREEN="${ESC}[01;32m"
+LIGHTGRAY="${ESC}[00;37m"
+
 # Resolve values safely
 HOST=$(hostname)
 OS_NAME=$(get_os_name)
@@ -270,9 +386,51 @@ KERNEL=$(uname -r)
 UPTIME=$(get_uptime)
 SHELL_VAL="${SHELL-sh}"
 CPU=$(get_cpu)
+[ -z "$CPU" ] && CPU="Unknown CPU"
+
+# Raw Memory and Disk (progress bars are loaded later)
+MEM_RAW=$(get_memory)
+DISK_RAW=$(df -Ph / | awk 'NR==2 {print $1 " (" $5 ")"}')
+
+plugin_keys=()
+plugin_vals=()
+
+# Scan ./plugins directory
+if [ -d "./plugins" ]; then
+  # Enable nullglob to avoid executing literally `./plugins/*` if folder is empty
+  shopt -s nullglob
+  for p in ./plugins/*; do
+    if [ -x "$p" ] && [ -f "$p" ]; then
+      plugin_out=$(run_with_timeout 2 "$p" 2>/dev/null | head -n 1 || true)
+      if [ -n "$plugin_out" ]; then
+        if [[ "$plugin_out" == *":"* ]]; then
+          p_key=$(echo "$plugin_out" | cut -d: -f1)
+          p_val=$(echo "$plugin_out" | cut -d: -f2- | sed 's/^\s*//')
+          plugin_keys+=("$p_key")
+          plugin_vals+=("$p_val")
+        else
+          label=$(basename "$p" | cut -d. -f1 | sed 's/^[0-9]\+-//')
+          label="$(tr '[:lower:]' '[:upper:]' <<< "${label:0:1}")${label:1}"
+          plugin_keys+=("$label")
+          plugin_vals+=("$plugin_out")
+        fi
+      fi
+    fi
+  done
+  shopt -u nullglob
+fi
+
+# Intercept output format flag early
+if [ -n "$OUTPUT" ]; then
+  case "$OUTPUT" in
+    json) print_json; exit 0 ;;
+    xml)  print_xml;  exit 0 ;;
+    txt)  print_txt;  exit 0 ;;
+    *) echo "Unknown output format: $OUTPUT" >&2; exit 1 ;;
+  esac
+fi
 
 # Memory with visual bar
-MEM_RAW=$(get_memory)
 if [[ "$MEM_RAW" == *"%"* ]]; then
   MEM_PCT=$(echo "$MEM_RAW" | cut -d% -f1)
   MEM_BAR=$(get_bar "$MEM_PCT")
@@ -282,23 +440,9 @@ else
 fi
 
 # Disk with visual bar
-DISK_RAW=$(df -h / | awk 'NR==2 {print $1 " (" $5 ")"}')
 DISK_PCT=$(echo "$DISK_RAW" | grep -o '[0-9]\+%' | tr -d '%' || echo "0")
 DISK_BAR=$(get_bar "$DISK_PCT")
 DISK="${DISK_BAR} ${DISK_RAW}"
-
-# Get Distro ID
-get_distro_id() {
-  if [ "$OS_TYPE" = "Darwin" ]; then
-    echo "darwin"
-  elif [ -f /etc/os-release ]; then
-    local id
-    id=$(grep '^ID=' /etc/os-release | cut -d= -f2 | tr -d '"')
-    echo "${id:-linux}"
-  else
-    echo "linux"
-  fi
-}
 
 DISTRO_ID=$(get_distro_id)
 
@@ -364,50 +508,16 @@ info[5]="${LBLUE}CPU:${RESTORE}    $CPU"
 info[6]="${LBLUE}Memory:${RESTORE} $MEMORY"
 info[7]="${LBLUE}Disk:${RESTORE}   $DISK"
 
-plugin_keys=()
-plugin_vals=()
-
-# Scan ./plugins directory
-if [ -d "./plugins" ]; then
-  # Enable nullglob to avoid executing literally `./plugins/*` if folder is empty
-  shopt -s nullglob
-  for p in ./plugins/*; do
-    if [ -x "$p" ] && [ -f "$p" ]; then
-      plugin_out=$(run_with_timeout 2 "$p" 2>/dev/null | head -n 1)
-      if [ -n "$plugin_out" ]; then
-        if [[ "$plugin_out" == *":"* ]]; then
-          p_key=$(echo "$plugin_out" | cut -d: -f1)
-          p_val=$(echo "$plugin_out" | cut -d: -f2- | sed 's/^\s*//')
-          plugin_keys+=("$p_key")
-          plugin_vals+=("$p_val")
-          info+=("${LBLUE}${p_key}:${RESTORE} $p_val")
-        else
-          label=$(basename "$p" | cut -d. -f1 | sed 's/^[0-9]\+-//')
-          label="$(tr '[:lower:]' '[:upper:]' <<< "${label:0:1}")${label:1}"
-          plugin_keys+=("$label")
-          plugin_vals+=("$plugin_out")
-          info+=("${LBLUE}${label}:${RESTORE} $plugin_out")
-        fi
-      fi
-    fi
-  done
-  shopt -u nullglob
-fi
-
-# Intercept output format flag early
-if [ -n "$OUTPUT" ]; then
-  case "$OUTPUT" in
-    json) print_json; exit 0 ;;
-    xml)  print_xml;  exit 0 ;;
-    txt)  print_txt;  exit 0 ;;
-    *) echo "Unknown output format: $OUTPUT" >&2; exit 1 ;;
-  esac
-fi
+# Append plugins to info array for card rendering
+for ((i=0; i<${#plugin_keys[@]}; i++)); do
+  info+=("${LBLUE}${plugin_keys[i]}:${RESTORE} ${plugin_vals[i]}")
+done
 
 # Scan ./plugins/extended directory
 ext_info=()
 HAS_EXT=0
 if [ "$MINIMAL" -eq 0 ] && [ -d "./plugins/extended" ]; then
+  # Enable nullglob to avoid executing literally `./plugins/extended/*` if folder is empty
   shopt -s nullglob
   for p in ./plugins/extended/*; do
     if [ -x "$p" ] && [ -f "$p" ]; then
@@ -439,17 +549,6 @@ if [ "$MINIMAL" -eq 0 ] && [ -d "./plugins/extended" ]; then
     fi
   fi
 fi
-
-visual_len() {
-  local s="$1"
-  local regex=$'\e\\[[0-9;]*[a-zA-Z]'
-  while [[ "$s" =~ $regex ]]; do
-    s="${s//${BASH_REMATCH[0]}/}"
-  done
-  s="${s//[$'\ufe0f'$'\u200d']/}"
-  s="${s//[☀️⚡⛅☁🌧🌦⛈🌩🌨❄🌫💨🌬🌪☔🌀🌁🌃🌄🌅🌇🌙🌕🌑]/xx}"
-  echo "${#s}"
-}
 
 # Get terminal width
 term_w=$(tput cols 2>/dev/null || echo 80)
@@ -538,39 +637,6 @@ else
   right_w=$available
   [ $right_w -lt 20 ] && right_w=20
 fi
-
-strip_ansi() {
-  local s="$1"
-  local regex=$'\e\\[[0-9;]*[a-zA-Z]'
-  while [[ "$s" =~ $regex ]]; do
-    s="${s//${BASH_REMATCH[0]}/}"
-  done
-  echo "$s"
-}
-
-truncate_ansi() {
-  local str="$1"
-  local limit="$2"
-  local vlen
-  vlen=$(visual_len "$str")
-  if [ "$vlen" -le "$limit" ]; then
-    echo "$str"
-  else
-    local stripped
-    stripped=$(strip_ansi "$str")
-    echo -e "${stripped:0:$((limit - 1))}…${RESTORE}"
-  fi
-}
-
-repeat_char() {
-  local char="$1"
-  local count="$2"
-  local out=""
-  for ((k=0; k<count; k++)); do
-    out="${out}${char}"
-  done
-  echo -n "$out"
-}
 
 BORDER_COLOR="$LBLUE"
 
@@ -718,4 +784,3 @@ else
 fi
 
 exit 0
-
