@@ -313,265 +313,356 @@ func main() {
 	if noASCII {
 		minLogoW = 0
 	}
-
 	// Only disable features if the terminal is physically too small to fit the shrunken columns
 	if !noASCII && hasExt {
 		if termW < 65 {
-			noASCII = true
-			minLogoW = 0
+			// Keep features active, but they will stack vertically if termW is small
 		}
 	}
 
+	// Calculate the maximum raw lengths for layout decisions
+	maxInfoLineW := 0
+	for _, line := range info {
+		rawLen := visualLength(line)
+		if rawLen > maxInfoLineW {
+			maxInfoLineW = rawLen
+		}
+	}
+
+	maxExtLineW := 0
 	if hasExt {
-		if termW < 45 {
-			hasExt = false
-			extInfo = nil
-			extW = 0
+		for _, line := range extInfo {
+			rawLen := visualLength(line)
+			if rawLen > maxExtLineW {
+				maxExtLineW = rawLen
+			}
 		}
 	}
 
-	if !noASCII && !hasExt {
-		if termW < 41 {
-			noASCII = true
-			minLogoW = 0
-		}
+	// Determine margins/borders needed for side-by-side layout
+	numActivePanes := 0
+	if !noASCII {
+		numActivePanes++
+	}
+	numActivePanes++ // info is always active
+	if hasExt {
+		numActivePanes++
 	}
 
-	// Proportional scaling to use the entire terminal width
-	totalBorders := 9
-	if noASCII {
-		totalBorders = 5
+	bordersSideBySide := 5 // 1 pane (noASCII, !hasExt) -> ┌──────┐ (5 chars)
+	if numActivePanes == 2 {
+		bordersSideBySide = 6 // ┌────┬────┐ (6 chars)
+	} else if numActivePanes == 3 {
+		bordersSideBySide = 9 // ┌────┬────┬────┐ (9 chars)
 	}
 	if noFrame {
-		totalBorders = 6 // spaces instead of borders
+		bordersSideBySide = 0
+		if !noASCII {
+			bordersSideBySide += 4 // Logo spacer: 4 spaces
+		}
+		if hasExt {
+			bordersSideBySide += 3 // Extended spacer: 3 spaces
+		}
 	}
 
-	available := termW - minLogoW - totalBorders
+	minInfoW := 20
+	minExtW := 0
 	if hasExt {
-		rightW = available * 50 / 100
-		extW = available - rightW
-		if rightW < 20 {
-			rightW = 20
-		}
-		if extW < 20 {
-			extW = 20
-		}
-	} else {
-		rightW = available
-		if rightW < 20 {
-			rightW = 20
-		}
+		minExtW = 20
 	}
+	minSideBySideWidth := leftW + minInfoW + minExtW + bordersSideBySide
 
-	// Re-evaluate maxLines after scaling/disabling
-	maxLines := len(info)
-	if !noASCII && len(logo) > maxLines {
-		maxLines = len(logo)
-	}
-	if hasExt && len(extInfo) > maxLines {
-		maxLines = len(extInfo)
-	}
+	useVerticalLayout := getTerminalWidth() < minSideBySideWidth
 
 	borderCol := lblue
 
-	if noFrame {
-		// Borderless Rendering
-		for i := 0; i < maxLines; i++ {
-			logoPrint := ""
-			if !noASCII && i < len(logo) {
-				logoPrint = logo[i]
-			}
-			lRaw := visualLength(logoPrint)
-			lPadCount := leftW - lRaw
-			lPadding := ""
-			if lPadCount > 0 {
-				lPadding = strings.Repeat(" ", lPadCount)
-			}
+	if useVerticalLayout {
+		// Vertical stacked layout: Draw title bars for each pane sequentially
+		boxW := termW - 4
+		if boxW < 12 {
+			boxW = 12
+		}
 
-			infoPrint := ""
-			if i < len(info) {
-				infoPrint = info[i]
-			}
-			infoPrint = truncateANSI(infoPrint, rightW)
-			rRaw := visualLength(infoPrint)
-			rPadCount := rightW - rRaw
-			rPadding := ""
-			if rPadCount > 0 {
-				rPadding = strings.Repeat(" ", rPadCount)
-			}
-
-			ePrint := ""
-			if hasExt && i < len(extInfo) {
-				ePrint = extInfo[i]
-			}
-			if ePrint == "---" {
-				ePrint = "\033[00;37m" + strings.Repeat("╌", extW) + restore
+		drawVerticalBox := func(title string, lines []string) {
+			if noFrame {
+				fmt.Println(borderCol + "--- " + title + " ---" + restore)
+				for _, line := range lines {
+					printLine := line
+					if printLine == "---" {
+						printLine = "\033[00;37m" + strings.Repeat("╌", termW) + restore
+					} else {
+						printLine = truncateANSI(printLine, termW)
+					}
+					fmt.Println(printLine)
+				}
+				fmt.Println()
 			} else {
-				ePrint = truncateANSI(ePrint, extW)
-			}
+				titleStr := " " + title + " "
+				titleLen := len(title) + 2
+				fillW := boxW - titleLen - 2
+				if fillW < 2 {
+					fillW = 2
+				}
 
-			var sb strings.Builder
-			if !noASCII {
-				sb.WriteString(" " + logoPrint + lPadding + "   ")
+				topBorder := borderCol + "┌──" + restore + titleStr + borderCol + strings.Repeat("─", fillW) + "┐" + restore
+				botBorder := borderCol + "└" + strings.Repeat("─", boxW) + "┘" + restore
+
+				fmt.Println(topBorder)
+				for _, line := range lines {
+					printLine := line
+					if printLine == "---" {
+						printLine = "\033[00;37m" + strings.Repeat("╌", boxW-2) + restore
+					} else {
+						printLine = truncateANSI(printLine, boxW-2)
+					}
+					visualLen := visualLength(printLine)
+					padding := boxW - 2 - visualLen
+					if padding < 0 {
+						padding = 0
+					}
+					padStr := strings.Repeat(" ", padding)
+					fmt.Printf("%s│%s %s%s %s│\n", borderCol, restore, printLine, padStr, borderCol)
+				}
+				fmt.Println(botBorder)
 			}
-			sb.WriteString(infoPrint + rPadding)
-			if hasExt {
-				sb.WriteString("   " + ePrint)
-			}
-			fmt.Println(sb.String())
+		}
+
+		if !noASCII && len(logo) > 0 {
+			drawVerticalBox("OS Logo", logo)
+		}
+		if len(info) > 0 {
+			drawVerticalBox("System Info", info)
+		}
+		if hasExt && len(extInfo) > 0 {
+			drawVerticalBox("Plugins & Diagnostics", extInfo)
 		}
 	} else {
-		// Framed Card Rendering
-		if !hasExt {
-			if noASCII {
-				// Case 1: Single pane (Info)
-				topLine := borderCol + "┌" + strings.Repeat("─", rightW+2) + "┐" + restore
-				botLine := borderCol + "└" + strings.Repeat("─", rightW+2) + "┘" + restore
-				fmt.Println(topLine)
-				for i := 0; i < maxLines; i++ {
-					rLine := ""
-					if i < len(info) {
-						rLine = info[i]
-					}
-					rLine = truncateANSI(rLine, rightW)
-					rRaw := visualLength(rLine)
-					rPadCount := rightW - rRaw
-					rPadding := ""
-					if rPadCount > 0 {
-						rPadding = strings.Repeat(" ", rPadCount)
-					}
-					fmt.Printf("%s│%s %s%s %s│\n", borderCol, restore, rLine, rPadding, borderCol)
-				}
-				fmt.Println(botLine)
-			} else {
-				// Case 2: Double pane (Logo + Info)
-				topLine := borderCol + "┌" + strings.Repeat("─", leftW+2) + "┬" + strings.Repeat("─", rightW+2) + "┐" + restore
-				botLine := borderCol + "└" + strings.Repeat("─", leftW+2) + "┴" + strings.Repeat("─", rightW+2) + "┘" + restore
-				fmt.Println(topLine)
-				for i := 0; i < maxLines; i++ {
-					logoPrint := ""
-					if i < len(logo) {
-						logoPrint = logo[i]
-					}
-					lRaw := visualLength(logoPrint)
-					lPadCount := leftW - lRaw
-					lPadding := ""
-					if lPadCount > 0 {
-						lPadding = strings.Repeat(" ", lPadCount)
-					}
-
-					infoPrint := ""
-					if i < len(info) {
-						infoPrint = info[i]
-					}
-					infoPrint = truncateANSI(infoPrint, rightW)
-					rRaw := visualLength(infoPrint)
-					rPadCount := rightW - rRaw
-					rPadding := ""
-					if rPadCount > 0 {
-						rPadding = strings.Repeat(" ", rPadCount)
-					}
-
-					fmt.Printf("%s│%s %s%s %s│%s %s%s %s│\n",
-						borderCol, restore, logoPrint, lPadding,
-						borderCol, restore, infoPrint, rPadding,
-						borderCol)
-				}
-				fmt.Println(botLine)
+		// Proportional scaling to use the entire terminal width
+		available := termW - minLogoW - bordersSideBySide
+		if hasExt {
+			rightW = available * 50 / 100
+			extW = available - rightW
+			if rightW < 20 {
+				rightW = 20
+			}
+			if extW < 20 {
+				extW = 20
 			}
 		} else {
-			if noASCII {
-				// Case 3: Double pane (Info + Extended)
-				topLine := borderCol + "┌" + strings.Repeat("─", rightW+2) + "┬" + strings.Repeat("─", extW+2) + "┐" + restore
-				botLine := borderCol + "└" + strings.Repeat("─", rightW+2) + "┴" + strings.Repeat("─", extW+2) + "┘" + restore
-				fmt.Println(topLine)
-				for i := 0; i < maxLines; i++ {
-					rLine := ""
-					if i < len(info) {
-						rLine = info[i]
-					}
-					rLine = truncateANSI(rLine, rightW)
-					rRaw := visualLength(rLine)
-					rPadCount := rightW - rRaw
-					rPadding := ""
-					if rPadCount > 0 {
-						rPadding = strings.Repeat(" ", rPadCount)
-					}
+			rightW = available
+			if rightW < 20 {
+				rightW = 20
+			}
+		}
 
-					eLine := ""
-					if i < len(extInfo) {
-						eLine = extInfo[i]
-					}
-					if eLine == "---" {
-						eLine = "\033[00;37m" + strings.Repeat("╌", extW) + restore
-					} else {
-						eLine = truncateANSI(eLine, extW)
-					}
-					eRaw := visualLength(eLine)
-					ePadCount := extW - eRaw
-					ePadding := ""
-					if ePadCount > 0 {
-						ePadding = strings.Repeat(" ", ePadCount)
-					}
+		// Re-evaluate maxLines after scaling/disabling
+		maxLines := len(info)
+		if !noASCII && len(logo) > maxLines {
+			maxLines = len(logo)
+		}
+		if hasExt && len(extInfo) > maxLines {
+			maxLines = len(extInfo)
+		}
 
-					fmt.Printf("%s│%s %s%s %s│%s %s%s %s│\n",
-						borderCol, restore, rLine, rPadding,
-						borderCol, restore, eLine, ePadding,
-						borderCol)
+		if noFrame {
+			// Borderless Rendering
+			for i := 0; i < maxLines; i++ {
+				logoPrint := ""
+				if !noASCII && i < len(logo) {
+					logoPrint = logo[i]
 				}
-				fmt.Println(botLine)
+				lRaw := visualLength(logoPrint)
+				lPadCount := leftW - lRaw
+				lPadding := ""
+				if lPadCount > 0 {
+					lPadding = strings.Repeat(" ", lPadCount)
+				}
+
+				infoPrint := ""
+				if i < len(info) {
+					infoPrint = info[i]
+				}
+				infoPrint = truncateANSI(infoPrint, rightW)
+				rRaw := visualLength(infoPrint)
+				rPadCount := rightW - rRaw
+				rPadding := ""
+				if rPadCount > 0 {
+					rPadding = strings.Repeat(" ", rPadCount)
+				}
+
+				ePrint := ""
+				if hasExt && i < len(extInfo) {
+					ePrint = extInfo[i]
+				}
+				if ePrint == "---" {
+					ePrint = "\033[00;37m" + strings.Repeat("╌", extW) + restore
+				} else {
+					ePrint = truncateANSI(ePrint, extW)
+				}
+
+				var sb strings.Builder
+				if !noASCII {
+					sb.WriteString(" " + logoPrint + lPadding + "   ")
+				}
+				sb.WriteString(infoPrint + rPadding)
+				if hasExt {
+					sb.WriteString("   " + ePrint)
+				}
+				fmt.Println(sb.String())
+			}
+		} else {
+			// Framed Card Rendering
+			if !hasExt {
+				if noASCII {
+					// Case 1: Single pane (Info)
+					topLine := borderCol + "┌" + strings.Repeat("─", rightW+2) + "┐" + restore
+					botLine := borderCol + "└" + strings.Repeat("─", rightW+2) + "┘" + restore
+					fmt.Println(topLine)
+					for i := 0; i < maxLines; i++ {
+						rLine := ""
+						if i < len(info) {
+							rLine = info[i]
+						}
+						rLine = truncateANSI(rLine, rightW)
+						rRaw := visualLength(rLine)
+						rPadCount := rightW - rRaw
+						rPadding := ""
+						if rPadCount > 0 {
+							rPadding = strings.Repeat(" ", rPadCount)
+						}
+						fmt.Printf("%s│%s %s%s %s│\n", borderCol, restore, rLine, rPadding, borderCol)
+					}
+					fmt.Println(botLine)
+				} else {
+					// Case 2: Double pane (Logo + Info)
+					topLine := borderCol + "┌" + strings.Repeat("─", leftW+2) + "┬" + strings.Repeat("─", rightW+2) + "┐" + restore
+					botLine := borderCol + "└" + strings.Repeat("─", leftW+2) + "┴" + strings.Repeat("─", rightW+2) + "┘" + restore
+					fmt.Println(topLine)
+					for i := 0; i < maxLines; i++ {
+						logoPrint := ""
+						if i < len(logo) {
+							logoPrint = logo[i]
+						}
+						lRaw := visualLength(logoPrint)
+						lPadCount := leftW - lRaw
+						lPadding := ""
+						if lPadCount > 0 {
+							lPadding = strings.Repeat(" ", lPadCount)
+						}
+
+						infoPrint := ""
+						if i < len(info) {
+							infoPrint = info[i]
+						}
+						infoPrint = truncateANSI(infoPrint, rightW)
+						rRaw := visualLength(infoPrint)
+						rPadCount := rightW - rRaw
+						rPadding := ""
+						if rPadCount > 0 {
+							rPadding = strings.Repeat(" ", rPadCount)
+						}
+
+						fmt.Printf("%s│%s %s%s %s│%s %s%s %s│\n",
+							borderCol, restore, logoPrint, lPadding,
+							borderCol, restore, infoPrint, rPadding,
+							borderCol)
+					}
+					fmt.Println(botLine)
+				}
 			} else {
-				// Case 4: Triple pane (Logo + Info + Extended)
-				topLine := borderCol + "┌" + strings.Repeat("─", leftW+2) + "┬" + strings.Repeat("─", rightW+2) + "┬" + strings.Repeat("─", extW+2) + "┐" + restore
-				botLine := borderCol + "└" + strings.Repeat("─", leftW+2) + "┴" + strings.Repeat("─", rightW+2) + "┴" + strings.Repeat("─", extW+2) + "┘" + restore
-				fmt.Println(topLine)
-				for i := 0; i < maxLines; i++ {
-					logoPrint := ""
-					if i < len(logo) {
-						logoPrint = logo[i]
-					}
-					lRaw := visualLength(logoPrint)
-					lPadCount := leftW - lRaw
-					lPadding := ""
-					if lPadCount > 0 {
-						lPadding = strings.Repeat(" ", lPadCount)
-					}
+				if noASCII {
+					// Case 3: Double pane (Info + Extended)
+					topLine := borderCol + "┌" + strings.Repeat("─", rightW+2) + "┬" + strings.Repeat("─", extW+2) + "┐" + restore
+					botLine := borderCol + "└" + strings.Repeat("─", rightW+2) + "┴" + strings.Repeat("─", extW+2) + "┘" + restore
+					fmt.Println(topLine)
+					for i := 0; i < maxLines; i++ {
+						rLine := ""
+						if i < len(info) {
+							rLine = info[i]
+						}
+						rLine = truncateANSI(rLine, rightW)
+						rRaw := visualLength(rLine)
+						rPadCount := rightW - rRaw
+						rPadding := ""
+						if rPadCount > 0 {
+							rPadding = strings.Repeat(" ", rPadCount)
+						}
 
-					infoPrint := ""
-					if i < len(info) {
-						infoPrint = info[i]
-					}
-					infoPrint = truncateANSI(infoPrint, rightW)
-					rRaw := visualLength(infoPrint)
-					rPadCount := rightW - rRaw
-					rPadding := ""
-					if rPadCount > 0 {
-						rPadding = strings.Repeat(" ", rPadCount)
-					}
+						eLine := ""
+						if i < len(extInfo) {
+							eLine = extInfo[i]
+						}
+						if eLine == "---" {
+							eLine = "\033[00;37m" + strings.Repeat("╌", extW) + restore
+						} else {
+							eLine = truncateANSI(eLine, extW)
+						}
+						eRaw := visualLength(eLine)
+						ePadCount := extW - eRaw
+						ePadding := ""
+						if ePadCount > 0 {
+							ePadding = strings.Repeat(" ", ePadCount)
+						}
 
-					ePrint := ""
-					if i < len(extInfo) {
-						ePrint = extInfo[i]
+						fmt.Printf("%s│%s %s%s %s│%s %s%s %s│\n",
+							borderCol, restore, rLine, rPadding,
+							borderCol, restore, eLine, ePadding,
+							borderCol)
 					}
-					if ePrint == "---" {
-						ePrint = "\033[00;37m" + strings.Repeat("╌", extW) + restore
-					} else {
-						ePrint = truncateANSI(ePrint, extW)
-					}
-					eRaw := visualLength(ePrint)
-					ePadCount := extW - eRaw
-					ePadding := ""
-					if ePadCount > 0 {
-						ePadding = strings.Repeat(" ", ePadCount)
-					}
+					fmt.Println(botLine)
+				} else {
+					// Case 4: Triple pane (Logo + Info + Extended)
+					topLine := borderCol + "┌" + strings.Repeat("─", leftW+2) + "┬" + strings.Repeat("─", rightW+2) + "┬" + strings.Repeat("─", extW+2) + "┐" + restore
+					botLine := borderCol + "└" + strings.Repeat("─", leftW+2) + "┴" + strings.Repeat("─", rightW+2) + "┴" + strings.Repeat("─", extW+2) + "┘" + restore
+					fmt.Println(topLine)
+					for i := 0; i < maxLines; i++ {
+						logoPrint := ""
+						if i < len(logo) {
+							logoPrint = logo[i]
+						}
+						lRaw := visualLength(logoPrint)
+						lPadCount := leftW - lRaw
+						lPadding := ""
+						if lPadCount > 0 {
+							lPadding = strings.Repeat(" ", lPadCount)
+						}
 
-					fmt.Printf("%s│%s %s%s %s│%s %s%s %s│%s %s%s %s│\n",
-						borderCol, restore, logoPrint, lPadding,
-						borderCol, restore, infoPrint, rPadding,
-						borderCol, restore, ePrint, ePadding,
-						borderCol)
+						infoPrint := ""
+						if i < len(info) {
+							infoPrint = info[i]
+						}
+						infoPrint = truncateANSI(infoPrint, rightW)
+						rRaw := visualLength(infoPrint)
+						rPadCount := rightW - rRaw
+						rPadding := ""
+						if rPadCount > 0 {
+							rPadding = strings.Repeat(" ", rPadCount)
+						}
+
+						ePrint := ""
+						if i < len(extInfo) {
+							ePrint = extInfo[i]
+						}
+						if ePrint == "---" {
+							ePrint = "\033[00;37m" + strings.Repeat("╌", extW) + restore
+						} else {
+							ePrint = truncateANSI(ePrint, extW)
+						}
+						eRaw := visualLength(ePrint)
+						ePadCount := extW - eRaw
+						ePadding := ""
+						if ePadCount > 0 {
+							ePadding = strings.Repeat(" ", ePadCount)
+						}
+
+						fmt.Printf("%s│%s %s%s %s│%s %s%s %s│%s %s%s %s│\n",
+							borderCol, restore, logoPrint, lPadding,
+							borderCol, restore, infoPrint, rPadding,
+							borderCol, restore, ePrint, ePadding,
+							borderCol)
+					}
+					fmt.Println(botLine)
 				}
-				fmt.Println(botLine)
 			}
 		}
 	}
