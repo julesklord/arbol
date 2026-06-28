@@ -17,6 +17,7 @@ assert_contains() {
   fi
 }
 
+
 run_suite() {
   local cmd="$1"
   local type="$2"
