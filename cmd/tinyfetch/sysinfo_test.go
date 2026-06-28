@@ -18,6 +18,14 @@ func TestRunCommand(t *testing.T) {
 	}
 }
 
+func TestRunCommand_ExitCode(t *testing.T) {
+	// A command that exists but fails with non-zero exit code
+	out := runCommand("sh", "-c", "exit 1")
+	if out != "" {
+		t.Errorf("Expected empty string for non-zero exit code, got %q", out)
+	}
+}
+
 func TestRunCommandWithTimeout(t *testing.T) {
 	out := runCommandWithTimeout(1*time.Second, "echo", "hello")
 	if out != "hello" {
