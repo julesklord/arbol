@@ -266,6 +266,25 @@ func printTree(node *TreeNode, prefixes []string, isLast bool) {
 	}
 }
 
+func gradientString(s string, r1, g1, b1, r2, g2, b2 int) string {
+	runes := []rune(s)
+	n := len(runes)
+	if n <= 1 {
+		return fmt.Sprintf("\033[38;2;%d;%d;%dm%s\033[0m", r1, g1, b1, s)
+	}
+
+	var sb strings.Builder
+	for i, r := range runes {
+		ratio := float64(i) / float64(n-1)
+		currR := int(float64(r1) + ratio*float64(r2-r1))
+		currG := int(float64(g1) + ratio*float64(g2-g1))
+		currB := int(float64(b1) + ratio*float64(b2-b1))
+		sb.WriteString(fmt.Sprintf("\033[38;2;%d;%d;%dm%c", currR, currG, currB, r))
+	}
+	sb.WriteString("\033[0m")
+	return sb.String()
+}
+
 func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj SystemInfo, extPluginsDir string) {
 	// Intercept output format flag early
 	if outputFmt != "" {
@@ -311,6 +330,7 @@ func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj Syst
 
 	// Styling tokens
 	bold := "\033[1m"
+	italic := "\033[3m"
 	reset := "\033[0m"
 	lblue := "\033[94m"
 	lcyan := "\033[96m"
@@ -327,27 +347,31 @@ func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj Syst
 	}
 
 	// Build Tree Root
+	// Gradient from Electric Cyan (0, 242, 254) to Purple-Blue (79, 172, 254)
+	titleText := infoObj.Host + " @ " + infoObj.OSName
+	rootText := bold + lcyan + "● " + reset + bold + gradientString(titleText, 0, 242, 254, 79, 172, 254)
+
 	root := &TreeNode{
-		Text: bold + lcyan + "● " + reset + bold + infoObj.Host + reset + " @ " + lblue + infoObj.OSName + reset,
+		Text: rootText,
 	}
 
 	// Specs category
-	specsNode := &TreeNode{Text: lcyan + bold + "specs" + reset}
-	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "kernel: " + reset + infoObj.Kernel})
-	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "uptime: " + reset + infoObj.Uptime})
-	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "shell: " + reset + infoObj.Shell})
-	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "cpu: " + reset + infoObj.CPU})
+	specsNode := &TreeNode{Text: lcyan + bold + "⚙ specs" + reset}
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "📦 kernel: " + reset + italic + infoObj.Kernel + reset})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "⏱ uptime: " + reset + italic + infoObj.Uptime + reset})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "💻 shell: " + reset + italic + infoObj.Shell + reset})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "🧠 cpu: " + reset + italic + infoObj.CPU + reset})
 	root.Children = append(root.Children, specsNode)
 
 	// Resources category
-	resourcesNode := &TreeNode{Text: lcyan + bold + "resources" + reset}
-	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "memory: " + reset + memVal})
+	resourcesNode := &TreeNode{Text: lcyan + bold + "📊 resources" + reset}
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "💾 memory: " + reset + memVal})
 	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "disk: " + reset + diskVal})
 	root.Children = append(root.Children, resourcesNode)
 
 	// Simple Plugins category
 	if len(infoObj.Keys) > 0 {
-		pluginsNode := &TreeNode{Text: lcyan + bold + "plugins" + reset}
+		pluginsNode := &TreeNode{Text: lcyan + bold + "🔌 plugins" + reset}
 		for i := 0; i < len(infoObj.Keys); i++ {
 			key := strings.ToLower(infoObj.Keys[i])
 			val := infoObj.Vals[i]
@@ -413,7 +437,7 @@ func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj Syst
 			}
 
 			if len(diagChildren) > 0 {
-				diagNode := &TreeNode{Text: lcyan + bold + "diagnostics" + reset}
+				diagNode := &TreeNode{Text: lcyan + bold + "🔍 diagnostics" + reset}
 				diagNode.Children = diagChildren
 				root.Children = append(root.Children, diagNode)
 			}
