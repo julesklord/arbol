@@ -112,8 +112,20 @@ func TestPrintJSON(t *testing.T) {
   }
 }
 `
+	info := SystemInfo{
+		Host:   "myhost",
+		OSName: "myos",
+		Kernel: "mykernel",
+		Uptime: "myuptime",
+		Shell:  "myshell",
+		CPU:    "mycpu",
+		Memory: "mymem",
+		Disk:   "mydisk",
+		Keys:   []string{"key1", "key2"},
+		Vals:   []string{"val1", "val2"},
+	}
 	output := captureStdout(func() {
-		printJSON("myhost", "myos", "mykernel", "myuptime", "myshell", "mycpu", "mymem", "mydisk", []string{"key1", "key2"}, []string{"val1", "val2"})
+		printJSON(info)
 	})
 
 	if output != expected {
@@ -133,8 +145,20 @@ func TestPrintJSON_NoPlugins(t *testing.T) {
   "disk": "mydisk"
 }
 `
+	info := SystemInfo{
+		Host:   "myhost",
+		OSName: "myos",
+		Kernel: "mykernel",
+		Uptime: "myuptime",
+		Shell:  "myshell",
+		CPU:    "mycpu",
+		Memory: "mymem",
+		Disk:   "mydisk",
+		Keys:   []string{},
+		Vals:   []string{},
+	}
 	output := captureStdout(func() {
-		printJSON("myhost", "myos", "mykernel", "myuptime", "myshell", "mycpu", "mymem", "mydisk", []string{}, []string{})
+		printJSON(info)
 	})
 
 	if output != expected {
@@ -158,8 +182,20 @@ func TestPrintXML(t *testing.T) {
   </plugins>
 </tinyfetch>
 `
+	info := SystemInfo{
+		Host:   "myhost",
+		OSName: "myos",
+		Kernel: "mykernel",
+		Uptime: "myuptime",
+		Shell:  "myshell",
+		CPU:    "mycpu",
+		Memory: "mymem",
+		Disk:   "mydisk",
+		Keys:   []string{"key1", "key 2"},
+		Vals:   []string{"val1", "val2"},
+	}
 	output := captureStdout(func() {
-		printXML("myhost", "myos", "mykernel", "myuptime", "myshell", "mycpu", "mymem", "mydisk", []string{"key1", "key 2"}, []string{"val1", "val2"})
+		printXML(info)
 	})
 
 	if output != expected {
@@ -179,8 +215,20 @@ func TestPrintXML_NoPlugins(t *testing.T) {
   <disk>mydisk</disk>
 </tinyfetch>
 `
+	info := SystemInfo{
+		Host:   "myhost",
+		OSName: "myos",
+		Kernel: "mykernel",
+		Uptime: "myuptime",
+		Shell:  "myshell",
+		CPU:    "mycpu",
+		Memory: "mymem",
+		Disk:   "mydisk",
+		Keys:   []string{},
+		Vals:   []string{},
+	}
 	output := captureStdout(func() {
-		printXML("myhost", "myos", "mykernel", "myuptime", "myshell", "mycpu", "mymem", "mydisk", []string{}, []string{})
+		printXML(info)
 	})
 
 	if output != expected {
@@ -200,8 +248,20 @@ Disk: mydisk
 key1: val1
 key 2: val2
 `
+	info := SystemInfo{
+		Host:   "myhost",
+		OSName: "myos",
+		Kernel: "mykernel",
+		Uptime: "myuptime",
+		Shell:  "myshell",
+		CPU:    "mycpu",
+		Memory: "mymem",
+		Disk:   "mydisk",
+		Keys:   []string{"key1", "key 2"},
+		Vals:   []string{"val1", "val2"},
+	}
 	output := captureStdout(func() {
-		printTXT("myhost", "myos", "mykernel", "myuptime", "myshell", "mycpu", "mymem", "mydisk", []string{"key1", "key 2"}, []string{"val1", "val2"})
+		printTXT(info)
 	})
 
 	if output != expected {
