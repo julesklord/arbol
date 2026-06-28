@@ -4,3 +4,8 @@ node_modules/
 /.vscode/
 /.idea/
 *.log
+
+# Jules temporary scripts/binaries
+fix_*.py
+/shellcheck
+/shellcheck-v0.9.0/
