@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.0 - Concurrent Plugins, Code Modularization & Security Enhancements
+- Refactored monolithic `main()` function in Go implementation into modular helper functions (`parseFlags()`, `gatherInfo()`, and `renderOutput()`).
+- Consolidated multiple parameters of export printing functions under a unified `SystemInfo` struct.
+- Implemented concurrent execution of simple plugins and extended plugins using `sync.WaitGroup` to avoid sequential blocking.
+- Centralized padding calculation into a new helper function `padString()`.
+- Secured plugin loading by looking up executable parent directory or `TINYFETCH_PLUGINS_DIR` environment variable instead of using insecure relative paths.
+- Switched wttr.in weather API and icanhazip.com IP API requests to HTTPS to prevent MITM attacks.
+- Added unit test coverage for `sysinfo.go` (including timeout/exit codes/sanity checks), `export.go` (with all special XML characters), `stripANSI()`, and `getBar()`.
+- Updated GitHub Actions CI workflow to use pinned actions and run shellcheck over the entire repository.
+- Removed obsolete scripting helper files and resolved minor shellcheck warnings in shell plugins.
+
 ## 0.3.8 - Robust ANSI Truncation, CJK Length & XML Sanitization
 - Implemented robust, color-preserving `truncate_ansi` in Bash script to prevent border color loss.
 - Added full support for double-width CJK characters, emojis, and zero-width markers in Bash `visual_len`.
