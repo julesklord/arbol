@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -138,6 +140,104 @@ func formatPluginName(filename string) string {
 	return strings.Join(parts, " ")
 }
 
+func loadASCIILogo() []string {
+	distroID := getDistroID()
+	homeDir, _ := os.UserHomeDir()
+
+	exe, err := os.Executable()
+	var exeDir string
+	if err == nil {
+		if realExe, err := filepath.EvalSymlinks(exe); err == nil {
+			exeDir = filepath.Dir(realExe)
+		} else {
+			exeDir = filepath.Dir(exe)
+		}
+	}
+
+	searchPaths := []string{
+		"./ascii/" + distroID + ".txt",
+	}
+	if exeDir != "" {
+		searchPaths = append(searchPaths, filepath.Join(exeDir, "ascii", distroID+".txt"))
+	}
+	searchPaths = append(searchPaths,
+		homeDir+"/.local/share/tinyfetch/ascii/"+distroID+".txt",
+		"/usr/local/share/tinyfetch/ascii/"+distroID+".txt",
+		"/usr/share/tinyfetch/ascii/"+distroID+".txt",
+	)
+
+	asciiPath := ""
+	for _, path := range searchPaths {
+		if _, err := os.Stat(path); err == nil {
+			asciiPath = path
+			break
+		}
+	}
+
+	// Fallback to generic OS file
+	if asciiPath == "" {
+		fallback := "linux"
+		if runtime.GOOS == "darwin" {
+			fallback = "darwin"
+		}
+		fallbackPaths := []string{
+			"./ascii/" + fallback + ".txt",
+		}
+		if exeDir != "" {
+			fallbackPaths = append(fallbackPaths, filepath.Join(exeDir, "ascii", fallback+".txt"))
+		}
+		fallbackPaths = append(fallbackPaths,
+			homeDir+"/.local/share/tinyfetch/ascii/"+fallback+".txt",
+			"/usr/local/share/tinyfetch/ascii/"+fallback+".txt",
+			"/usr/share/tinyfetch/ascii/"+fallback+".txt",
+		)
+		for _, path := range fallbackPaths {
+			if _, err := os.Stat(path); err == nil {
+				asciiPath = path
+				break
+			}
+		}
+	}
+
+	var logo []string
+	if asciiPath != "" {
+		file, err := os.Open(asciiPath)
+		if err == nil {
+			defer file.Close()
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				logo = append(logo, scanner.Text())
+			}
+		}
+	}
+
+	// Dynamic/hardcoded fallback if file not found
+	if len(logo) == 0 {
+		if runtime.GOOS == "darwin" {
+			logo = []string{
+				"\033[96m      .---.\033[0m",
+				"\033[96m     /     \\\033[0m",
+				"\033[96m     \\__   /\033[0m",
+				"\033[96m    /   `-' \\\033[0m",
+				"\033[96m   |         |\033[0m",
+				"\033[96m    \\       /\033[0m",
+				"\033[96m     `-...-'\033[0m",
+			}
+		} else {
+			logo = []string{
+				"\033[33m     .---.\033[0m",
+				"\033[33m    /     \\\033[0m",
+				"\033[34m    \\ \033[0m\033[1;37mo o\033[0m\033[34m /\033[0m",
+				"\033[33m    /  \\-/ \\\033[0m",
+				"\033[33m   / /     \\ \\\033[0m",
+				"\033[33m  ( (_     _ ) )\033[0m",
+				"\033[33m   `(_`---'_)''\033[0m",
+			}
+		}
+	}
+	return logo
+}
+
 func printTree(node *TreeNode, prefixes []string, isLast bool) {
 	if len(prefixes) > 0 {
 		for _, p := range prefixes[:len(prefixes)-1] {
@@ -214,6 +314,17 @@ func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj Syst
 	reset := "\033[0m"
 	lblue := "\033[94m"
 	lcyan := "\033[96m"
+
+	// Render ASCII Emblem Header at the top
+	if !noASCII {
+		logo := loadASCIILogo()
+		for _, line := range logo {
+			fmt.Println(line)
+		}
+		if len(logo) > 0 {
+			fmt.Println()
+		}
+	}
 
 	// Build Tree Root
 	root := &TreeNode{
