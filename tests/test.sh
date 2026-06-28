@@ -17,17 +17,6 @@ assert_contains() {
   fi
 }
 
-assert_eq() {
-  local val1="$1"
-  local val2="$2"
-  local name="$3"
-  if [ "$val1" -eq "$val2" ]; then
-    echo "  [PASS] $name"
-  else
-    echo "  [FAIL] $name (Expected $val2, got $val1)"
-    failed=1
-  fi
-}
 
 run_suite() {
   local cmd="$1"
