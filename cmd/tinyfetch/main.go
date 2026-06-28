@@ -1,18 +1,21 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
+
+type TreeNode struct {
+	Text     string
+	Children []*TreeNode
+}
 
 func parseFlags() (bool, bool, bool, string) {
 	noASCII := false
@@ -121,6 +124,48 @@ func gatherInfo(pluginsDir string) SystemInfo {
 	}
 }
 
+func formatPluginName(filename string) string {
+	name := filename
+	if idx := strings.Index(name, "."); idx != -1 {
+		name = name[:idx]
+	}
+	parts := strings.Split(name, "_")
+	for i, part := range parts {
+		if len(part) > 0 {
+			parts[i] = strings.ToUpper(part[:1]) + part[1:]
+		}
+	}
+	return strings.Join(parts, " ")
+}
+
+func printTree(node *TreeNode, prefixes []string, isLast bool) {
+	if len(prefixes) > 0 {
+		for _, p := range prefixes[:len(prefixes)-1] {
+			fmt.Print("\033[90m" + p + "\033[0m") // Gray branches
+		}
+		if isLast {
+			fmt.Print("\033[90m└── \033[0m")
+		} else {
+			fmt.Print("\033[90m├── \033[0m")
+		}
+	}
+	fmt.Println(node.Text)
+
+	for i, child := range node.Children {
+		var nextPrefixes []string
+		if len(prefixes) > 0 {
+			nextPrefixes = append(nextPrefixes, prefixes...)
+			if isLast {
+				nextPrefixes[len(nextPrefixes)-1] = "    "
+			} else {
+				nextPrefixes[len(nextPrefixes)-1] = "│   "
+			}
+		}
+		nextPrefixes = append(nextPrefixes, "│   ")
+		printTree(child, nextPrefixes, i == len(node.Children)-1)
+	}
+}
+
 func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj SystemInfo, extPluginsDir string) {
 	// Intercept output format flag early
 	if outputFmt != "" {
@@ -164,113 +209,47 @@ func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj Syst
 		}
 	}
 
-	// Colors
-	restore := "\033[0m"
-	lblue := "\033[01;34m"
-	lyellow := "\033[01;33m"
-	lcyan := "\033[01;36m"
-	white := "\033[01;37m"
+	// Styling tokens
+	bold := "\033[1m"
+	reset := "\033[0m"
+	lblue := "\033[94m"
+	lcyan := "\033[96m"
 
-	// Setup Logo
-	var logo []string
-	if !noASCII {
-		distroID := getDistroID()
-		homeDir, _ := os.UserHomeDir()
-		// Paths to search
-		searchPaths := []string{
-			"./ascii/" + distroID + ".txt",
-			homeDir + "/.local/share/tinyfetch/ascii/" + distroID + ".txt",
-			"/usr/local/share/tinyfetch/ascii/" + distroID + ".txt",
-			"/usr/share/tinyfetch/ascii/" + distroID + ".txt",
-		}
-
-		asciiPath := ""
-		for _, path := range searchPaths {
-			if _, err := os.Stat(path); err == nil {
-				asciiPath = path
-				break
-			}
-		}
-
-		// Fallback to generic if not found
-		if asciiPath == "" {
-			fallback := "linux"
-			if runtime.GOOS == "darwin" {
-				fallback = "darwin"
-			}
-			fallbackPaths := []string{
-				"./ascii/" + fallback + ".txt",
-				homeDir + "/.local/share/tinyfetch/ascii/" + fallback + ".txt",
-				"/usr/local/share/tinyfetch/ascii/" + fallback + ".txt",
-				"/usr/share/tinyfetch/ascii/" + fallback + ".txt",
-			}
-			for _, path := range fallbackPaths {
-				if _, err := os.Stat(path); err == nil {
-					asciiPath = path
-					break
-				}
-			}
-		}
-
-		if asciiPath != "" {
-			file, err := os.Open(asciiPath)
-			if err == nil {
-				defer file.Close()
-				scanner := bufio.NewScanner(file)
-				for scanner.Scan() {
-					logo = append(logo, scanner.Text())
-				}
-			}
-		}
-
-		// Hardcoded fallbacks if no file is available
-		if len(logo) == 0 {
-			if runtime.GOOS == "darwin" {
-				logo = []string{
-					lcyan + "      .---." + restore,
-					lcyan + "     /     \\" + restore,
-					lcyan + "     \\__   /" + restore,
-					lcyan + "    /   `-' \\" + restore,
-					lcyan + "   |         |" + restore,
-					lcyan + "    \\       /" + restore,
-					lcyan + "     `-...-'" + restore,
-				}
-			} else {
-				logo = []string{
-					lyellow + "     .---." + restore,
-					lyellow + "    /     \\" + restore,
-					lblue + "    \\ " + restore + white + "o o" + restore + lblue + " /" + restore,
-					lyellow + "    /  \\-/ \\" + restore,
-					lyellow + "   / /     \\ \\" + restore,
-					lyellow + "  ( (_     _ ) )" + restore,
-					lyellow + "   `(_`---'_)''" + restore,
-				}
-			}
-		}
+	// Build Tree Root
+	root := &TreeNode{
+		Text: bold + lcyan + "● " + reset + bold + infoObj.Host + reset + " @ " + lblue + infoObj.OSName + reset,
 	}
 
-	// Setup Info
-	info := []string{
-		lblue + "Host:" + restore + "   " + infoObj.Host,
-		lblue + "OS:" + restore + "     " + infoObj.OSName,
-		lblue + "Kernel:" + restore + " " + infoObj.Kernel,
-		lblue + "Uptime:" + restore + " " + infoObj.Uptime,
-		lblue + "Shell:" + restore + "  " + infoObj.Shell,
-		lblue + "CPU:" + restore + "    " + infoObj.CPU,
-		lblue + "Memory:" + restore + " " + memVal,
-		lblue + "Disk:" + restore + "   " + diskVal,
+	// Specs category
+	specsNode := &TreeNode{Text: lcyan + bold + "specs" + reset}
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "kernel: " + reset + infoObj.Kernel})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "uptime: " + reset + infoObj.Uptime})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "shell: " + reset + infoObj.Shell})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "cpu: " + reset + infoObj.CPU})
+	root.Children = append(root.Children, specsNode)
+
+	// Resources category
+	resourcesNode := &TreeNode{Text: lcyan + bold + "resources" + reset}
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "memory: " + reset + memVal})
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "disk: " + reset + diskVal})
+	root.Children = append(root.Children, resourcesNode)
+
+	// Simple Plugins category
+	if len(infoObj.Keys) > 0 {
+		pluginsNode := &TreeNode{Text: lcyan + bold + "plugins" + reset}
+		for i := 0; i < len(infoObj.Keys); i++ {
+			key := strings.ToLower(infoObj.Keys[i])
+			val := infoObj.Vals[i]
+			pluginsNode.Children = append(pluginsNode.Children, &TreeNode{Text: lblue + key + ": " + reset + val})
+		}
+		root.Children = append(root.Children, pluginsNode)
 	}
 
-	for i := 0; i < len(infoObj.Keys); i++ {
-		info = append(info, lblue+infoObj.Keys[i]+":"+restore+" "+infoObj.Vals[i])
-	}
-
-	// Scan extended plugins directory
-	var extInfo []string
-	hasExt := false
+	// Diagnostics category (extended plugins)
 	if !minimal {
 		if entries, err := os.ReadDir(extPluginsDir); err == nil {
 			type extResult struct {
+				name  string
 				lines []string
 				ok    bool
 			}
@@ -283,7 +262,7 @@ func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj Syst
 					fileInfo, err := entry.Info()
 					if err == nil && (fileInfo.Mode()&0111 != 0) {
 						wg.Add(1)
-						go func(idx int, path string) {
+						go func(idx int, path string, filename string) {
 							defer wg.Done()
 							ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 							out, err := exec.CommandContext(ctx, path).Output()
@@ -297,375 +276,41 @@ func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj Syst
 										lines = lines[:len(lines)-1]
 									}
 									if len(lines) > 0 {
-										results[idx] = extResult{lines: lines, ok: true}
+										results[idx] = extResult{
+											name:  formatPluginName(filename),
+											lines: lines,
+											ok:    true,
+										}
 									}
 								}
 							}
-						}(i, infoPath)
+						}(i, infoPath, entry.Name())
 					}
 				}
 			}
 			wg.Wait()
 
+			var diagChildren []*TreeNode
 			for _, res := range results {
 				if res.ok {
+					pluginNode := &TreeNode{Text: lblue + strings.ToLower(res.name) + reset}
 					for _, line := range res.lines {
-						extInfo = append(extInfo, line)
+						pluginNode.Children = append(pluginNode.Children, &TreeNode{Text: line})
 					}
-					extInfo = append(extInfo, "---") // subtle separation token
-					hasExt = true
+					diagChildren = append(diagChildren, pluginNode)
 				}
 			}
-		}
-	}
-	// Remove trailing separator token if present
-	if len(extInfo) > 0 && extInfo[len(extInfo)-1] == "---" {
-		extInfo = extInfo[:len(extInfo)-1]
-	}
 
-	// Calculate maximum logo raw length
-	leftW := 0
-	if !noASCII {
-		for _, line := range logo {
-			rawLen := visualLength(line)
-			if rawLen > leftW {
-				leftW = rawLen
-			}
-		}
-		if leftW < 16 {
-			leftW = 16
-		}
-	}
-
-	// Calculate maximum info raw length
-	rightW := 0
-	for _, line := range info {
-		rawLen := visualLength(line)
-		if rawLen > rightW {
-			rightW = rawLen
-		}
-	}
-
-	// Calculate maximum extended info raw length
-	extW := 0
-	if hasExt {
-		for _, line := range extInfo {
-			rawLen := visualLength(line)
-			if rawLen > extW {
-				extW = rawLen
-			}
-		}
-		if extW < 24 {
-			extW = 24
-		}
-	}
-
-	// Get terminal width
-	termW := getTerminalWidth()
-
-	// DYNAMIC RESPONSIVE LAYOUT
-	minLogoW := leftW
-	if noASCII {
-		minLogoW = 0
-	}
-	// Only disable features if the terminal is physically too small to fit the shrunken columns
-	if !noASCII && hasExt {
-		if termW < 65 {
-			// Keep features active, but they will stack vertically if termW is small
-		}
-	}
-
-	// Calculate the maximum raw lengths for layout decisions
-	maxInfoLineW := 0
-	for _, line := range info {
-		rawLen := visualLength(line)
-		if rawLen > maxInfoLineW {
-			maxInfoLineW = rawLen
-		}
-	}
-
-	maxExtLineW := 0
-	if hasExt {
-		for _, line := range extInfo {
-			rawLen := visualLength(line)
-			if rawLen > maxExtLineW {
-				maxExtLineW = rawLen
+			if len(diagChildren) > 0 {
+				diagNode := &TreeNode{Text: lcyan + bold + "diagnostics" + reset}
+				diagNode.Children = diagChildren
+				root.Children = append(root.Children, diagNode)
 			}
 		}
 	}
 
-	// Determine margins/borders needed for side-by-side layout
-	numActivePanes := 0
-	if !noASCII {
-		numActivePanes++
-	}
-	numActivePanes++ // info is always active
-	if hasExt {
-		numActivePanes++
-	}
-
-	bordersSideBySide := 5 // 1 pane (noASCII, !hasExt) -> ┌──────┐ (5 chars)
-	if numActivePanes == 2 {
-		bordersSideBySide = 6 // ┌────┬────┐ (6 chars)
-	} else if numActivePanes == 3 {
-		bordersSideBySide = 9 // ┌────┬────┬────┐ (9 chars)
-	}
-	if noFrame {
-		bordersSideBySide = 0
-		if !noASCII {
-			bordersSideBySide += 4 // Logo spacer: 4 spaces
-		}
-		if hasExt {
-			bordersSideBySide += 3 // Extended spacer: 3 spaces
-		}
-	}
-
-	minInfoW := 20
-	minExtW := 0
-	if hasExt {
-		minExtW = 20
-	}
-	minSideBySideWidth := leftW + minInfoW + minExtW + bordersSideBySide
-
-	useVerticalLayout := getTerminalWidth() < minSideBySideWidth
-
-	borderCol := lblue
-
-	if useVerticalLayout {
-		// Vertical stacked layout: Draw title bars for each pane sequentially
-		boxW := termW - 4
-		if boxW < 12 {
-			boxW = 12
-		}
-
-		drawVerticalBox := func(title string, lines []string) {
-			if noFrame {
-				fmt.Println(borderCol + "--- " + title + " ---" + restore)
-				for _, line := range lines {
-					printLine := line
-					if printLine == "---" {
-						printLine = "\033[00;37m" + strings.Repeat("╌", termW) + restore
-					} else {
-						printLine = truncateANSI(printLine, termW)
-					}
-					fmt.Println(printLine)
-				}
-				fmt.Println()
-			} else {
-				titleStr := " " + title + " "
-				titleLen := len(title) + 2
-				fillW := boxW - titleLen - 2
-				if fillW < 2 {
-					fillW = 2
-				}
-
-				topBorder := borderCol + "┌──" + restore + titleStr + borderCol + strings.Repeat("─", fillW) + "┐" + restore
-				botBorder := borderCol + "└" + strings.Repeat("─", boxW) + "┘" + restore
-
-				fmt.Println(topBorder)
-				for _, line := range lines {
-					printLine := line
-					if printLine == "---" {
-						printLine = "\033[00;37m" + strings.Repeat("╌", boxW-2) + restore
-					} else {
-						printLine = truncateANSI(printLine, boxW-2)
-					}
-					padStr := padString(printLine, boxW-2)
-					fmt.Printf("%s│%s %s%s %s│\n", borderCol, restore, printLine, padStr, borderCol)
-				}
-				fmt.Println(botBorder)
-			}
-		}
-
-		if !noASCII && len(logo) > 0 {
-			drawVerticalBox("OS Logo", logo)
-		}
-		if len(info) > 0 {
-			drawVerticalBox("System Info", info)
-		}
-		if hasExt && len(extInfo) > 0 {
-			drawVerticalBox("Plugins & Diagnostics", extInfo)
-		}
-	} else {
-		// Proportional scaling to use the entire terminal width
-		available := termW - minLogoW - bordersSideBySide
-		if hasExt {
-			rightW = available * 50 / 100
-			extW = available - rightW
-			if rightW < 20 {
-				rightW = 20
-			}
-			if extW < 20 {
-				extW = 20
-			}
-		} else {
-			rightW = available
-			if rightW < 20 {
-				rightW = 20
-			}
-		}
-
-		// Re-evaluate maxLines after scaling/disabling
-		maxLines := len(info)
-		if !noASCII && len(logo) > maxLines {
-			maxLines = len(logo)
-		}
-		if hasExt && len(extInfo) > maxLines {
-			maxLines = len(extInfo)
-		}
-
-		if noFrame {
-			// Borderless Rendering
-			for i := 0; i < maxLines; i++ {
-				logoPrint := ""
-				if !noASCII && i < len(logo) {
-					logoPrint = logo[i]
-				}
-				lPadding := padString(logoPrint, leftW)
-
-				infoPrint := ""
-				if i < len(info) {
-					infoPrint = info[i]
-				}
-				infoPrint = truncateANSI(infoPrint, rightW)
-				rPadding := padString(infoPrint, rightW)
-
-				ePrint := ""
-				if hasExt && i < len(extInfo) {
-					ePrint = extInfo[i]
-				}
-				if ePrint == "---" {
-					ePrint = "\033[00;37m" + strings.Repeat("╌", extW) + restore
-				} else {
-					ePrint = truncateANSI(ePrint, extW)
-				}
-
-				var sb strings.Builder
-				if !noASCII {
-					sb.WriteString(" " + logoPrint + lPadding + "   ")
-				}
-				sb.WriteString(infoPrint + rPadding)
-				if hasExt {
-					sb.WriteString("   " + ePrint)
-				}
-				fmt.Println(sb.String())
-			}
-		} else {
-			// Framed Card Rendering
-			if !hasExt {
-				if noASCII {
-					// Case 1: Single pane (Info)
-					topLine := borderCol + "┌" + strings.Repeat("─", rightW+2) + "┐" + restore
-					botLine := borderCol + "└" + strings.Repeat("─", rightW+2) + "┘" + restore
-					fmt.Println(topLine)
-					for i := 0; i < maxLines; i++ {
-						rLine := ""
-						if i < len(info) {
-							rLine = info[i]
-						}
-						rLine = truncateANSI(rLine, rightW)
-						rPadding := padString(rLine, rightW)
-						fmt.Printf("%s│%s %s%s %s│\n", borderCol, restore, rLine, rPadding, borderCol)
-					}
-					fmt.Println(botLine)
-				} else {
-					// Case 2: Double pane (Logo + Info)
-					topLine := borderCol + "┌" + strings.Repeat("─", leftW+2) + "┬" + strings.Repeat("─", rightW+2) + "┐" + restore
-					botLine := borderCol + "└" + strings.Repeat("─", leftW+2) + "┴" + strings.Repeat("─", rightW+2) + "┘" + restore
-					fmt.Println(topLine)
-					for i := 0; i < maxLines; i++ {
-						logoPrint := ""
-						if i < len(logo) {
-							logoPrint = logo[i]
-						}
-						lPadding := padString(logoPrint, leftW)
-
-						infoPrint := ""
-						if i < len(info) {
-							infoPrint = info[i]
-						}
-						infoPrint = truncateANSI(infoPrint, rightW)
-						rPadding := padString(infoPrint, rightW)
-
-						fmt.Printf("%s│%s %s%s %s│%s %s%s %s│\n",
-							borderCol, restore, logoPrint, lPadding,
-							borderCol, restore, infoPrint, rPadding,
-							borderCol)
-					}
-					fmt.Println(botLine)
-				}
-			} else {
-				if noASCII {
-					// Case 3: Double pane (Info + Extended)
-					topLine := borderCol + "┌" + strings.Repeat("─", rightW+2) + "┬" + strings.Repeat("─", extW+2) + "┐" + restore
-					botLine := borderCol + "└" + strings.Repeat("─", rightW+2) + "┴" + strings.Repeat("─", extW+2) + "┘" + restore
-					fmt.Println(topLine)
-					for i := 0; i < maxLines; i++ {
-						rLine := ""
-						if i < len(info) {
-							rLine = info[i]
-						}
-						rLine = truncateANSI(rLine, rightW)
-						rPadding := padString(rLine, rightW)
-
-						eLine := ""
-						if i < len(extInfo) {
-							eLine = extInfo[i]
-						}
-						if eLine == "---" {
-							eLine = "\033[00;37m" + strings.Repeat("╌", extW) + restore
-						} else {
-							eLine = truncateANSI(eLine, extW)
-						}
-						ePadding := padString(eLine, extW)
-
-						fmt.Printf("%s│%s %s%s %s│%s %s%s %s│\n",
-							borderCol, restore, rLine, rPadding,
-							borderCol, restore, eLine, ePadding,
-							borderCol)
-					}
-					fmt.Println(botLine)
-				} else {
-					// Case 4: Triple pane (Logo + Info + Extended)
-					topLine := borderCol + "┌" + strings.Repeat("─", leftW+2) + "┬" + strings.Repeat("─", rightW+2) + "┬" + strings.Repeat("─", extW+2) + "┐" + restore
-					botLine := borderCol + "└" + strings.Repeat("─", leftW+2) + "┴" + strings.Repeat("─", rightW+2) + "┴" + strings.Repeat("─", extW+2) + "┘" + restore
-					fmt.Println(topLine)
-					for i := 0; i < maxLines; i++ {
-						logoPrint := ""
-						if i < len(logo) {
-							logoPrint = logo[i]
-						}
-						lPadding := padString(logoPrint, leftW)
-
-						infoPrint := ""
-						if i < len(info) {
-							infoPrint = info[i]
-						}
-						infoPrint = truncateANSI(infoPrint, rightW)
-						rPadding := padString(infoPrint, rightW)
-
-						ePrint := ""
-						if i < len(extInfo) {
-							ePrint = extInfo[i]
-						}
-						if ePrint == "---" {
-							ePrint = "\033[00;37m" + strings.Repeat("╌", extW) + restore
-						} else {
-							ePrint = truncateANSI(ePrint, extW)
-						}
-						ePadding := padString(ePrint, extW)
-
-						fmt.Printf("%s│%s %s%s %s│%s %s%s %s│%s %s%s %s│\n",
-							borderCol, restore, logoPrint, lPadding,
-							borderCol, restore, infoPrint, rPadding,
-							borderCol, restore, ePrint, ePadding,
-							borderCol)
-					}
-					fmt.Println(botLine)
-				}
-			}
-		}
-	}
+	// Render the Tree
+	printTree(root, []string{}, true)
 }
 
 func getPluginsDir() string {

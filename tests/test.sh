@@ -26,14 +26,14 @@ run_suite() {
   # Test 1: Basic execution and exit code
   local out
   out=$($cmd)
-  assert_contains "$out" "Host:" "$type: Outputs Host"
-  assert_contains "$out" "OS:" "$type: Outputs OS"
-  assert_contains "$out" "Kernel:" "$type: Outputs Kernel"
-  assert_contains "$out" "Uptime:" "$type: Outputs Uptime"
-  assert_contains "$out" "Shell:" "$type: Outputs Shell"
-  assert_contains "$out" "CPU:" "$type: Outputs CPU"
-  assert_contains "$out" "Memory:" "$type: Outputs Memory"
-  assert_contains "$out" "Disk:" "$type: Outputs Disk"
+  assert_contains "$out" "●" "$type: Outputs tree root indicator"
+  assert_contains "$out" "@" "$type: Outputs host/OS separator"
+  assert_contains "$out" "kernel:" "$type: Outputs Kernel"
+  assert_contains "$out" "uptime:" "$type: Outputs Uptime"
+  assert_contains "$out" "shell:" "$type: Outputs Shell"
+  assert_contains "$out" "cpu:" "$type: Outputs CPU"
+  assert_contains "$out" "memory:" "$type: Outputs Memory"
+  assert_contains "$out" "disk:" "$type: Outputs Disk"
 
   # Test 2: Help output
   local help_out
