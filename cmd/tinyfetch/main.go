@@ -241,6 +241,79 @@ func loadASCIILogo() []string {
 	return logo
 }
 
+func loadASCIILogoBanner() []string {
+	distroID := getDistroID()
+	homeDir, _ := os.UserHomeDir()
+
+	exe, err := os.Executable()
+	var exeDir string
+	if err == nil {
+		if realExe, err := filepath.EvalSymlinks(exe); err == nil {
+			exeDir = filepath.Dir(realExe)
+		} else {
+			exeDir = filepath.Dir(exe)
+		}
+	}
+
+	searchPaths := []string{
+		"./ascii/" + distroID + "_banner.txt",
+	}
+	if exeDir != "" {
+		searchPaths = append(searchPaths, filepath.Join(exeDir, "ascii", distroID+"_banner.txt"))
+	}
+	searchPaths = append(searchPaths,
+		homeDir+"/.local/share/tinyfetch/ascii/"+distroID+"_banner.txt",
+		"/usr/local/share/tinyfetch/ascii/"+distroID+"_banner.txt",
+		"/usr/share/tinyfetch/ascii/"+distroID+"_banner.txt",
+	)
+
+	asciiPath := ""
+	for _, path := range searchPaths {
+		if _, err := os.Stat(path); err == nil {
+			asciiPath = path
+			break
+		}
+	}
+
+	// Fallback to generic linux_banner/darwin_banner
+	if asciiPath == "" {
+		fallback := "linux"
+		if runtime.GOOS == "darwin" {
+			fallback = "darwin"
+		}
+		fallbackPaths := []string{
+			"./ascii/" + fallback + "_banner.txt",
+		}
+		if exeDir != "" {
+			fallbackPaths = append(fallbackPaths, filepath.Join(exeDir, "ascii", fallback+"_banner.txt"))
+		}
+		fallbackPaths = append(fallbackPaths,
+			homeDir+"/.local/share/tinyfetch/ascii/"+fallback+"_banner.txt",
+			"/usr/local/share/tinyfetch/ascii/"+fallback+"_banner.txt",
+			"/usr/share/tinyfetch/ascii/"+fallback+"_banner.txt",
+		)
+		for _, path := range fallbackPaths {
+			if _, err := os.Stat(path); err == nil {
+				asciiPath = path
+				break
+			}
+		}
+	}
+
+	var logo []string
+	if asciiPath != "" {
+		file, err := os.Open(asciiPath)
+		if err == nil {
+			defer file.Close()
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				logo = append(logo, scanner.Text())
+			}
+		}
+	}
+	return logo
+}
+
 func printTree(node *TreeNode, prefixes []string, isLast bool) {
 	if len(prefixes) > 0 {
 		for _, p := range prefixes[:len(prefixes)-1] {
@@ -366,12 +439,28 @@ func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj Syst
 				fmt.Println()
 			}
 		case "banner":
-			drawBannerLogo(infoObj.OSName)
-			fmt.Println()
+			logo := loadASCIILogoBanner()
+			if len(logo) > 0 {
+				for _, line := range logo {
+					fmt.Println(gradientString(line, 255, 94, 98, 0, 242, 254))
+				}
+				fmt.Println()
+			} else {
+				drawBannerLogo(infoObj.OSName)
+				fmt.Println()
+			}
 		default:
 			// Fallback/Default
-			drawBannerLogo(infoObj.OSName)
-			fmt.Println()
+			logo := loadASCIILogoBanner()
+			if len(logo) > 0 {
+				for _, line := range logo {
+					fmt.Println(gradientString(line, 255, 94, 98, 0, 242, 254))
+				}
+				fmt.Println()
+			} else {
+				drawBannerLogo(infoObj.OSName)
+				fmt.Println()
+			}
 		}
 	}
 
