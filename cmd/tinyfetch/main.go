@@ -19,11 +19,12 @@ type TreeNode struct {
 	Children []*TreeNode
 }
 
-func parseFlags() (bool, bool, bool, string) {
+func parseFlags() (bool, bool, bool, string, string) {
 	noASCII := false
 	minimal := false
 	noFrame := false
 	outputFmt := ""
+	logoMode := "banner" // default is banner
 
 	for _, arg := range os.Args[1:] {
 		if arg == "--no-ascii" {
@@ -34,12 +35,14 @@ func parseFlags() (bool, bool, bool, string) {
 			noFrame = true
 		} else if strings.HasPrefix(arg, "--output=") {
 			outputFmt = strings.TrimPrefix(arg, "--output=")
+		} else if strings.HasPrefix(arg, "--logo=") {
+			logoMode = strings.TrimPrefix(arg, "--logo=")
 		} else if arg == "--help" || arg == "-h" {
-			fmt.Printf("Usage: %s [--no-ascii] [--minimal] [--noframe] [--output=json|xml|txt]\n", os.Args[0])
+			fmt.Printf("Usage: %s [--no-ascii] [--minimal] [--noframe] [--logo=simple|banner] [--output=json|xml|txt]\n", os.Args[0])
 			os.Exit(0)
 		}
 	}
-	return noASCII, minimal, noFrame, outputFmt
+	return noASCII, minimal, noFrame, outputFmt, logoMode
 }
 
 func gatherInfo(pluginsDir string) SystemInfo {
@@ -285,7 +288,23 @@ func gradientString(s string, r1, g1, b1, r2, g2, b2 int) string {
 	return sb.String()
 }
 
-func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj SystemInfo, extPluginsDir string) {
+func drawBannerLogo(osName string) {
+	osUpper := strings.ToUpper(osName)
+	osUpper = stripANSI(osUpper)
+	content := "  T I N Y F E T C H  //  " + osUpper + "  "
+	width := len(content) + 2
+
+	top := "╔" + strings.Repeat("═", width-2) + "╗"
+	mid := "║" + content + "║"
+	bot := "╚" + strings.Repeat("═", width-2) + "╝"
+
+	// Gradient from bright Coral Red (255, 94, 98) to Electric Cyan (0, 242, 254)
+	fmt.Println(gradientString(top, 255, 94, 98, 0, 242, 254))
+	fmt.Println(gradientString(mid, 255, 94, 98, 0, 242, 254))
+	fmt.Println(gradientString(bot, 255, 94, 98, 0, 242, 254))
+}
+
+func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj SystemInfo, extPluginsDir, logoMode string) {
 	// Intercept output format flag early
 	if outputFmt != "" {
 		switch outputFmt {
@@ -335,19 +354,28 @@ func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj Syst
 	lblue := "\033[94m"
 	lcyan := "\033[96m"
 
-	// Render ASCII Emblem Header at the top
+	// Render Logo/Banner Header at the top
 	if !noASCII {
-		logo := loadASCIILogo()
-		for _, line := range logo {
-			fmt.Println(line)
-		}
-		if len(logo) > 0 {
+		switch logoMode {
+		case "simple":
+			logo := loadASCIILogo()
+			for _, line := range logo {
+				fmt.Println(line)
+			}
+			if len(logo) > 0 {
+				fmt.Println()
+			}
+		case "banner":
+			drawBannerLogo(infoObj.OSName)
+			fmt.Println()
+		default:
+			// Fallback/Default
+			drawBannerLogo(infoObj.OSName)
 			fmt.Println()
 		}
 	}
 
 	// Build Tree Root
-	// Gradient from Electric Cyan (0, 242, 254) to Purple-Blue (79, 172, 254)
 	titleText := infoObj.Host + " @ " + infoObj.OSName
 	rootText := bold + lcyan + "● " + reset + bold + gradientString(titleText, 0, 242, 254, 79, 172, 254)
 
@@ -464,9 +492,9 @@ func getPluginsDir() string {
 }
 
 func main() {
-	noASCII, minimal, noFrame, outputFmt := parseFlags()
+	noASCII, minimal, noFrame, outputFmt, logoMode := parseFlags()
 	pluginsDir := getPluginsDir()
 	extPluginsDir := filepath.Join(pluginsDir, "extended")
 	infoObj := gatherInfo(pluginsDir)
-	renderOutput(noASCII, minimal, noFrame, outputFmt, infoObj, extPluginsDir)
+	renderOutput(noASCII, minimal, noFrame, outputFmt, infoObj, extPluginsDir, logoMode)
 }
