@@ -18,7 +18,6 @@ assert_contains() {
 }
 
 
-
 run_suite() {
   local cmd="$1"
   local type="$2"
@@ -45,7 +44,7 @@ run_suite() {
   local no_ascii_out
   no_ascii_out=$($cmd --no-ascii)
   local line_count
-  line_count=$(echo "$no_ascii_out" | grep -c -v "^$" || true)
+  line_count=$(echo "$no_ascii_out" | grep -c -v "^$")
   if [ "$line_count" -ge 8 ]; then
     echo "  [PASS] $type: --no-ascii prints at least 8 lines ($line_count)"
   else
