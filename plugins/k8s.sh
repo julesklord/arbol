@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Kubernetes current context and namespace plugin for tinyfetch
+# Kubernetes current context and namespace plugin for arbol
 set -euo pipefail
 
 # Check if kubectl exists

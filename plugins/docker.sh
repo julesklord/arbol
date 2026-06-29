@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Docker status plugin for tinyfetch
+# Docker status plugin for arbol
 set -euo pipefail
 
 # Check if docker command exists

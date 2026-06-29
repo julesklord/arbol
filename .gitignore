@@ -1,5 +1,5 @@
 *.exe
-/tinyfetch
+/arbol
 node_modules/
 /.vscode/
 /.idea/

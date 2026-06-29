@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Git commit graph plugin for tinyfetch (extended pane)
+# Git commit graph plugin for arbol (extended pane)
 set -euo pipefail
 
 # ANSI colors

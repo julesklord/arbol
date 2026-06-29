@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Package manager count plugin for tinyfetch (cross-platform Linux & macOS)
+# Package manager count plugin for arbol (cross-platform Linux & macOS)
 set -euo pipefail
 
 native_mgr=""

@@ -27,5 +27,5 @@ The use of **Conventional Commits** is mandatory:
 ## Verification Requirements
 
 1. Fork the repo and create a topic branch.
-2. Run `shellcheck scripts/tinyfetch.sh` and `make build` before opening a PR.
+2. Run `make build` and `make test` before opening a PR.
 3. Include tests for new behaviors under `tests/` (bash bats or simple sh harness).

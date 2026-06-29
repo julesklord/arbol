@@ -190,9 +190,9 @@ func loadASCIILogo() []string {
 		searchPaths = append(searchPaths, filepath.Join(exeDir, "ascii", distroID+".txt"))
 	}
 	searchPaths = append(searchPaths,
-		homeDir+"/.local/share/tinyfetch/ascii/"+distroID+".txt",
-		"/usr/local/share/tinyfetch/ascii/"+distroID+".txt",
-		"/usr/share/tinyfetch/ascii/"+distroID+".txt",
+		homeDir+"/.local/share/arbol/ascii/"+distroID+".txt",
+		"/usr/local/share/arbol/ascii/"+distroID+".txt",
+		"/usr/share/arbol/ascii/"+distroID+".txt",
 	)
 
 	asciiPath := ""
@@ -216,9 +216,9 @@ func loadASCIILogo() []string {
 			fallbackPaths = append(fallbackPaths, filepath.Join(exeDir, "ascii", fallback+".txt"))
 		}
 		fallbackPaths = append(fallbackPaths,
-			homeDir+"/.local/share/tinyfetch/ascii/"+fallback+".txt",
-			"/usr/local/share/tinyfetch/ascii/"+fallback+".txt",
-			"/usr/share/tinyfetch/ascii/"+fallback+".txt",
+			homeDir+"/.local/share/arbol/ascii/"+fallback+".txt",
+			"/usr/local/share/arbol/ascii/"+fallback+".txt",
+			"/usr/share/arbol/ascii/"+fallback+".txt",
 		)
 		for _, path := range fallbackPaths {
 			if _, err := os.Stat(path); err == nil {
@@ -288,9 +288,9 @@ func loadASCIILogoBanner() []string {
 		searchPaths = append(searchPaths, filepath.Join(exeDir, "ascii", distroID+"_banner.txt"))
 	}
 	searchPaths = append(searchPaths,
-		homeDir+"/.local/share/tinyfetch/ascii/"+distroID+"_banner.txt",
-		"/usr/local/share/tinyfetch/ascii/"+distroID+"_banner.txt",
-		"/usr/share/tinyfetch/ascii/"+distroID+"_banner.txt",
+		homeDir+"/.local/share/arbol/ascii/"+distroID+"_banner.txt",
+		"/usr/local/share/arbol/ascii/"+distroID+"_banner.txt",
+		"/usr/share/arbol/ascii/"+distroID+"_banner.txt",
 	)
 
 	asciiPath := ""
@@ -314,9 +314,9 @@ func loadASCIILogoBanner() []string {
 			fallbackPaths = append(fallbackPaths, filepath.Join(exeDir, "ascii", fallback+"_banner.txt"))
 		}
 		fallbackPaths = append(fallbackPaths,
-			homeDir+"/.local/share/tinyfetch/ascii/"+fallback+"_banner.txt",
-			"/usr/local/share/tinyfetch/ascii/"+fallback+"_banner.txt",
-			"/usr/share/tinyfetch/ascii/"+fallback+"_banner.txt",
+			homeDir+"/.local/share/arbol/ascii/"+fallback+"_banner.txt",
+			"/usr/local/share/arbol/ascii/"+fallback+"_banner.txt",
+			"/usr/share/arbol/ascii/"+fallback+"_banner.txt",
 		)
 		for _, path := range fallbackPaths {
 			if _, err := os.Stat(path); err == nil {
@@ -390,7 +390,7 @@ func gradientString(s string, r1, g1, b1, r2, g2, b2 int) string {
 func drawBannerLogo(osName string) {
 	osUpper := strings.ToUpper(osName)
 	osUpper = stripANSI(osUpper)
-	content := "  T I N Y F E T C H  //  " + osUpper + "  "
+	content := "  A R B O L  //  " + osUpper + "  "
 	width := len(content) + 2
 
 	top := "╔" + strings.Repeat("═", width-2) + "╗"
@@ -610,7 +610,7 @@ func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj Syst
 }
 
 func getPluginsDir() string {
-	if env := os.Getenv("TINYFETCH_PLUGINS_DIR"); env != "" {
+	if env := os.Getenv("ARBOL_PLUGINS_DIR"); env != "" {
 		return env
 	}
 	exe, err := os.Executable()

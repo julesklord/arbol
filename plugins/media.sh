@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Media status plugin for tinyfetch (queries playerctl if available)
+# Media status plugin for arbol (queries playerctl if available)
 set -euo pipefail
 
 # Check if playerctl exists

@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 - Consolidated multiple parameters of export printing functions under a unified `SystemInfo` struct.
 - Implemented concurrent execution of simple plugins and extended plugins using `sync.WaitGroup` to avoid sequential blocking.
 - Centralized padding calculation into a new helper function `padString()`.
-- Secured plugin loading by looking up executable parent directory or `TINYFETCH_PLUGINS_DIR` environment variable instead of using insecure relative paths.
+- Secured plugin loading by looking up executable parent directory or `ARBOL_PLUGINS_DIR` environment variable instead of using insecure relative paths.
 - Switched wttr.in weather API and icanhazip.com IP API requests to HTTPS to prevent MITM attacks.
 - Added unit test coverage for `sysinfo.go` (including timeout/exit codes/sanity checks), `export.go` (with all special XML characters), `stripANSI()`, and `getBar()`.
 - Updated GitHub Actions CI workflow to use pinned actions and run shellcheck over the entire repository.
@@ -24,8 +24,8 @@ All notable changes to this project will be documented in this file.
 - Clamped progress bar metrics in both versions to prevent drawing overflows.
 
 ## 0.3.7 - Code Modularization, Unit Tests & Plugin Timeouts
-- Refactored Go implementation in `cmd/tinyfetch/` into multiple single-responsibility files (`main.go`, `render.go`, `sysinfo.go`, `export.go`).
-- Created Go table-driven unit test suite in `cmd/tinyfetch/main_test.go` checking string manipulation and unicode width functions.
+- Refactored Go implementation in `cmd/arbol/` into multiple single-responsibility files (`main.go`, `render.go`, `sysinfo.go`, `export.go`).
+- Created Go table-driven unit test suite in `cmd/arbol/main_test.go` checking string manipulation and unicode width functions.
 - Added 2-second timeout limits to simple and extended plugin executions in both Go and Bash.
 - Highly optimized visual length calculations and ANSI color stripping in Bash script by replacing external `sed` processes with native string patterns and regular expression loops.
 
@@ -35,7 +35,7 @@ All notable changes to this project will be documented in this file.
 
 ## 0.3.5 - Terminal Scaling & Paths Expansion
 - Expanded columns to fill the full terminal width by default instead of keeping a static maximum layout size.
-- Added user local share directory (`~/.local/share/tinyfetch/ascii/`) to logo text search paths.
+- Added user local share directory (`~/.local/share/arbol/ascii/`) to logo text search paths.
 
 ## 0.3.4 - Weather Alignment Correction
 - Fixed box border misalignment when displaying wttr.in responses by utilizing corrected visual length calculations.
@@ -60,8 +60,8 @@ All notable changes to this project will be documented in this file.
   - Weather Forecast (`plugins/extended/weather_forecast.sh`): Multi-line weather forecast query from wttr.in.
   - Git Commit Graph (`plugins/extended/git_graph.sh`): Displays a beautiful branch history visualization (local or via GitHub API if a token is present).
   - System Dashboard (`plugins/extended/sys_dashboard.sh`): Displays load averages and top memory-consuming processes.
-- Enhanced both Shell (`scripts/tinyfetch.sh`) and Go (`cmd/tinyfetch/main.go`) codebases to align, size, and wrap multi-pane boundaries symmetrically using rune counts.
-
+- Enhanced both Shell (`scripts/arbol.sh`) and Go (`cmd/arbol/main.go`) codebases to align, size, and wrap multi-pane boundaries symmetrically using rune counts.
+`
 ## 0.2.4 - Developer & System plugins
 - Created `plugins/battery.sh` to report battery level and charging status across Linux and macOS.
 - Created `plugins/ip.sh` to fetch and show both internal IP and public IP addresses (with a 1s connection timeout).
@@ -82,13 +82,13 @@ All notable changes to this project will be documented in this file.
 
 
 ## 0.2.0 - Multiplatform stability & Go version
-- Refactored `scripts/tinyfetch.sh` for Linux & macOS portability under `set -e`.
+- Refactored `scripts/arbol.sh` for Linux & macOS portability under `set -e`.
 - Fixed ShellCheck `SC2034` warning.
 - Added support for a modular plugins folder (`./plugins/`).
 - Added dynamic distro ASCII logo loading from `ascii/` text files with automatic fallbacks.
 - Added visual progress bars for memory and disk usage metrics.
 - Replaced standard printing with an innovative double-pane terminal card layout with box-drawing borders.
-- Implemented compiled Go version in `cmd/tinyfetch/main.go`.
+- Implemented compiled Go version in `cmd/arbol/main.go`.
 - Added test suite in `tests/test.sh`.
 - Created standard FMG files (`docs/AGENT.md`, `docs/GEMINI.md`, etc.).
 
@@ -98,4 +98,3 @@ All notable changes to this project will be documented in this file.
 
 ## 0.1.0 - Initial skeleton
 - Repository scaffolded with standard structure and README.
-

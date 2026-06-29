@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# System Dashboard plugin for tinyfetch (extended pane)
+# System Dashboard plugin for arbol (extended pane)
 set -euo pipefail
 
 ESC=$(printf '\033')

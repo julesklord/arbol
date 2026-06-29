@@ -1,11 +1,11 @@
-BINARY=tinyfetch
+BINARY=arbol
 
 .PHONY: build install clean test
 
-# Build: prefer Go build if cmd/tinyfetch/main.go exists, otherwise no-op
+# Build: prefer Go build if cmd/arbol/main.go exists, otherwise no-op
 build:
-	@if [ -f "cmd/tinyfetch/main.go" ]; then \
-		go build -o $(BINARY) ./cmd/tinyfetch; \
+	@if [ -f "cmd/arbol/main.go" ]; then \
+		go build -o $(BINARY) ./cmd/arbol; \
 		echo "Built $(BINARY) (Go version)"; \
 	else \
 		echo "No Go implementation found — nothing to build"; \
@@ -14,9 +14,9 @@ build:
 # Install: install built binary
 install: build
 	@if [ -d "ascii" ]; then \
-		mkdir -p /usr/local/share/tinyfetch/ascii; \
-		cp -r ascii/* /usr/local/share/tinyfetch/ascii/; \
-		echo "Installed ASCII assets to /usr/local/share/tinyfetch/ascii/"; \
+		mkdir -p /usr/local/share/arbol/ascii; \
+		cp -r ascii/* /usr/local/share/arbol/ascii/; \
+		echo "Installed ASCII assets to /usr/local/share/arbol/ascii/"; \
 	fi
 	@if [ -f "$(BINARY)" ]; then \
 		install -m 0755 $(BINARY) /usr/local/bin/$(BINARY); \

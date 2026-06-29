@@ -101,7 +101,7 @@ func escapeXML(s string) string {
 }
 
 func printXML(info SystemInfo) {
-	fmt.Printf("<tinyfetch>\n")
+	fmt.Printf("<arbol>\n")
 	fmt.Printf("  <host>%s</host>\n", escapeXML(info.Host))
 	fmt.Printf("  <os>%s</os>\n", escapeXML(info.OSName))
 	fmt.Printf("  <kernel>%s</kernel>\n", escapeXML(info.Kernel))
@@ -139,7 +139,7 @@ func printXML(info SystemInfo) {
 		}
 		fmt.Printf("  </plugins>\n")
 	}
-	fmt.Printf("</tinyfetch>\n")
+	fmt.Printf("</arbol>\n")
 }
 
 func printTXT(info SystemInfo) {

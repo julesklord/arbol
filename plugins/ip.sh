@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Network IP status plugin for tinyfetch
+# Network IP status plugin for arbol
 set -euo pipefail
 
 # ANSI colors

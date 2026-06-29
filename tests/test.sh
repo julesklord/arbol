@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Simple test harness for tinyfetch (both Shell and Go versions)
+# Simple test harness for arbol (Go version)
 set -euo pipefail
 
 failed=0
@@ -62,10 +62,10 @@ run_suite() {
 }
 
 # Run Go version test (if compiled)
-if [ -f "./tinyfetch" ]; then
-  run_suite "./tinyfetch" "Go"
+if [ -f "./arbol" ]; then
+  run_suite "./arbol" "Go"
 else
-  echo "Error: tinyfetch binary not built"
+  echo "Error: arbol binary not built"
   exit 1
 fi
 

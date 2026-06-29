@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Battery status plugin for tinyfetch (cross-platform Linux & macOS)
+# Battery status plugin for arbol (cross-platform Linux & macOS)
 set -euo pipefail
 
 # ANSI colors

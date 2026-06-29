@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Advanced Git status plugin for tinyfetch with Nerd Fonts and colors
+# Advanced Git status plugin for arbol with Nerd Fonts and colors
 set -euo pipefail
 
 # Check if inside a git repo

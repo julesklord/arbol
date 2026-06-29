@@ -192,7 +192,7 @@ func TestPrintJSON_NoPlugins(t *testing.T) {
 }
 
 func TestPrintXML(t *testing.T) {
-	expected := `<tinyfetch>
+	expected := `<arbol>
   <host>myhost</host>
   <os>myos</os>
   <kernel>mykernel</kernel>
@@ -214,7 +214,7 @@ func TestPrintXML(t *testing.T) {
       <value>val2</value>
     </key_2>
   </plugins>
-</tinyfetch>
+</arbol>
 `
 	info := SystemInfo{
 		Host:      "myhost",
@@ -245,7 +245,7 @@ func TestPrintXML(t *testing.T) {
 }
 
 func TestPrintXML_NoPlugins(t *testing.T) {
-	expected := `<tinyfetch>
+	expected := `<arbol>
   <host>myhost</host>
   <os>myos</os>
   <kernel>mykernel</kernel>
@@ -259,7 +259,7 @@ func TestPrintXML_NoPlugins(t *testing.T) {
   <swap>myswap</swap>
   <disk>mydisk</disk>
   <processes>myprocesses</processes>
-</tinyfetch>
+</arbol>
 `
 	info := SystemInfo{
 		Host:      "myhost",

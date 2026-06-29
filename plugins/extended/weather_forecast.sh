@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Weather forecast plugin for tinyfetch (extended pane)
+# Weather forecast plugin for arbol (extended pane)
 set -euo pipefail
 
 # ANSI colors
