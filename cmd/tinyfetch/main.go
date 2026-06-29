@@ -55,9 +55,14 @@ func gatherInfo(pluginsDir string) SystemInfo {
 		shellVal = "sh"
 	}
 	cpuVal := getCPU()
+	gpuVal := getGPU()
+	dewmVal := getDEWM()
+	termVal := getTerminal()
 
 	memRaw := getMemory()
+	swapRaw := getSwap()
 	diskRaw := getDisk()
+	procVal := getProcesses()
 
 	var pluginKeys []string
 	var pluginVals []string
@@ -116,16 +121,21 @@ func gatherInfo(pluginsDir string) SystemInfo {
 	}
 
 	return SystemInfo{
-		Host:   hostname,
-		OSName: osName,
-		Kernel: kernel,
-		Uptime: uptimeVal,
-		Shell:  shellVal,
-		CPU:    cpuVal,
-		Memory: memRaw,
-		Disk:   diskRaw,
-		Keys:   pluginKeys,
-		Vals:   pluginVals,
+		Host:      hostname,
+		OSName:    osName,
+		Kernel:    kernel,
+		Uptime:    uptimeVal,
+		Shell:     shellVal,
+		CPU:       cpuVal,
+		GPU:       gpuVal,
+		DEWM:      dewmVal,
+		Terminal:  termVal,
+		Memory:    memRaw,
+		Swap:      swapRaw,
+		Disk:      diskRaw,
+		Processes: procVal,
+		Keys:      pluginKeys,
+		Vals:      pluginVals,
 	}
 }
 
@@ -405,6 +415,15 @@ func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj Syst
 		}
 	}
 
+	// Swap & Progress Bar
+	swapVal := infoObj.Swap
+	if strings.Contains(infoObj.Swap, "%") {
+		pctPart := strings.Split(infoObj.Swap, "%")[0]
+		if pct, err := strconv.Atoi(strings.TrimSpace(pctPart)); err == nil {
+			swapVal = getBar(pct) + " " + infoObj.Swap
+		}
+	}
+
 	// Disk & Progress Bar
 	diskVal := infoObj.Disk
 	if strings.Contains(infoObj.Disk, "%") {
@@ -478,12 +497,17 @@ func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj Syst
 	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "⏱ uptime: " + reset + italic + infoObj.Uptime + reset})
 	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "💻 shell: " + reset + italic + infoObj.Shell + reset})
 	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "🧠 cpu: " + reset + italic + infoObj.CPU + reset})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "🎮 gpu: " + reset + italic + infoObj.GPU + reset})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "🖥 de/wm: " + reset + italic + infoObj.DEWM + reset})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "📟 terminal: " + reset + italic + infoObj.Terminal + reset})
 	root.Children = append(root.Children, specsNode)
 
 	// Resources category
 	resourcesNode := &TreeNode{Text: lcyan + bold + "📊 resources" + reset}
 	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "💾 memory: " + reset + memVal})
-	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "disk: " + reset + diskVal})
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "🔄 swap: " + reset + swapVal})
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "💿 disk: " + reset + diskVal})
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "⚡ processes: " + reset + italic + infoObj.Processes + reset})
 	root.Children = append(root.Children, resourcesNode)
 
 	// Simple Plugins category

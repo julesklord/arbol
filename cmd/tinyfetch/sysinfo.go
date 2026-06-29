@@ -228,3 +228,112 @@ func getDisk() string {
 	}
 	return "n/a"
 }
+
+func getGPU() string {
+	if runtime.GOOS == "darwin" {
+		out := runCommand("bash", "-c", "system_profiler SPDisplaysDataType | grep 'Chipset Model'")
+		if out != "" {
+			parts := strings.Split(out, ":")
+			if len(parts) >= 2 {
+				return strings.TrimSpace(parts[1])
+			}
+		}
+	} else if runtime.GOOS == "linux" {
+		out := runCommand("bash", "-c", "lspci | grep -i 'vga\\|3d\\|display'")
+		if out != "" {
+			lines := strings.Split(out, "\n")
+			line := lines[0]
+			if idx := strings.Index(line, "controller:"); idx != -1 {
+				line = line[idx+11:]
+			} else if idx := strings.Index(line, "VGA compatible controller: "); idx != -1 {
+				line = line[idx+27:]
+			} else if idx := strings.Index(line, "3D controller: "); idx != -1 {
+				line = line[idx+15:]
+			}
+			if idx := strings.Index(line, " (rev "); idx != -1 {
+				line = line[:idx]
+			}
+			return strings.TrimSpace(line)
+		}
+	}
+	return "n/a"
+}
+
+func getDEWM() string {
+	if runtime.GOOS == "darwin" {
+		return "Aqua"
+	}
+	de := os.Getenv("XDG_CURRENT_DESKTOP")
+	if de != "" {
+		return de
+	}
+	wm := os.Getenv("DESKTOP_SESSION")
+	if wm != "" {
+		return wm
+	}
+	return "n/a"
+}
+
+func getTerminal() string {
+	termProg := os.Getenv("TERM_PROGRAM")
+	if termProg != "" {
+		return termProg
+	}
+	termEnv := os.Getenv("TERM")
+	if termEnv != "" {
+		return termEnv
+	}
+	return "n/a"
+}
+
+func getSwap() string {
+	if runtime.GOOS == "linux" {
+		file, err := os.Open("/proc/meminfo")
+		if err == nil {
+			defer file.Close()
+			scanner := bufio.NewScanner(file)
+			var total, free int64
+			for scanner.Scan() {
+				line := scanner.Text()
+				if strings.HasPrefix(line, "SwapTotal:") {
+					fmt.Sscanf(line, "SwapTotal: %d kB", &total)
+				} else if strings.HasPrefix(line, "SwapFree:") {
+					fmt.Sscanf(line, "SwapFree: %d kB", &free)
+				}
+			}
+			if total > 0 {
+				used := total - free
+				pct := used * 100 / total
+				return fmt.Sprintf("%d%% (%dMB / %dMB)", pct, used/1024, total/1024)
+			}
+		}
+	} else if runtime.GOOS == "darwin" {
+		out := runCommand("sysctl", "-n", "vm.swapusage")
+		if out != "" {
+			return out
+		}
+	}
+	return "n/a"
+}
+
+func getProcesses() string {
+	if runtime.GOOS == "linux" {
+		files, err := os.ReadDir("/proc")
+		if err == nil {
+			count := 0
+			for _, f := range files {
+				if f.IsDir() {
+					if _, err := strconv.Atoi(f.Name()); err == nil {
+						count++
+					}
+				}
+			}
+			return strconv.Itoa(count)
+		}
+	}
+	out := runCommand("bash", "-c", "ps -ax | wc -l")
+	if out != "" {
+		return strings.TrimSpace(out)
+	}
+	return "n/a"
+}

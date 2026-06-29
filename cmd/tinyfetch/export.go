@@ -6,16 +6,21 @@ import (
 )
 
 type SystemInfo struct {
-	Host   string
-	OSName string
-	Kernel string
-	Uptime string
-	Shell  string
-	CPU    string
-	Memory string
-	Disk   string
-	Keys   []string
-	Vals   []string
+	Host      string
+	OSName    string
+	Kernel    string
+	Uptime    string
+	Shell     string
+	CPU       string
+	GPU       string
+	DEWM      string
+	Terminal  string
+	Memory    string
+	Swap      string
+	Disk      string
+	Processes string
+	Keys      []string
+	Vals      []string
 }
 
 func printJSON(info SystemInfo) {
@@ -26,8 +31,13 @@ func printJSON(info SystemInfo) {
 	fmt.Printf("  \"uptime\": %q,\n", info.Uptime)
 	fmt.Printf("  \"shell\": %q,\n", info.Shell)
 	fmt.Printf("  \"cpu\": %q,\n", info.CPU)
+	fmt.Printf("  \"gpu\": %q,\n", info.GPU)
+	fmt.Printf("  \"de_wm\": %q,\n", info.DEWM)
+	fmt.Printf("  \"terminal\": %q,\n", info.Terminal)
 	fmt.Printf("  \"memory\": %q,\n", info.Memory)
-	fmt.Printf("  \"disk\": %q", info.Disk)
+	fmt.Printf("  \"swap\": %q,\n", info.Swap)
+	fmt.Printf("  \"disk\": %q,\n", info.Disk)
+	fmt.Printf("  \"processes\": %q", info.Processes)
 
 	if len(info.Keys) > 0 {
 		fmt.Printf(",\n  \"plugins\": {\n")
@@ -76,8 +86,13 @@ func printXML(info SystemInfo) {
 	fmt.Printf("  <uptime>%s</uptime>\n", escapeXML(info.Uptime))
 	fmt.Printf("  <shell>%s</shell>\n", escapeXML(info.Shell))
 	fmt.Printf("  <cpu>%s</cpu>\n", escapeXML(info.CPU))
+	fmt.Printf("  <gpu>%s</gpu>\n", escapeXML(info.GPU))
+	fmt.Printf("  <de_wm>%s</de_wm>\n", escapeXML(info.DEWM))
+	fmt.Printf("  <terminal>%s</terminal>\n", escapeXML(info.Terminal))
 	fmt.Printf("  <memory>%s</memory>\n", escapeXML(info.Memory))
+	fmt.Printf("  <swap>%s</swap>\n", escapeXML(info.Swap))
 	fmt.Printf("  <disk>%s</disk>\n", escapeXML(info.Disk))
+	fmt.Printf("  <processes>%s</processes>\n", escapeXML(info.Processes))
 	if len(info.Keys) > 0 {
 		fmt.Printf("  <plugins>\n")
 		for i := 0; i < len(info.Keys); i++ {
@@ -106,8 +121,13 @@ func printTXT(info SystemInfo) {
 	fmt.Printf("Uptime: %s\n", info.Uptime)
 	fmt.Printf("Shell: %s\n", info.Shell)
 	fmt.Printf("CPU: %s\n", info.CPU)
+	fmt.Printf("GPU: %s\n", info.GPU)
+	fmt.Printf("DE/WM: %s\n", info.DEWM)
+	fmt.Printf("Terminal: %s\n", info.Terminal)
 	fmt.Printf("Memory: %s\n", info.Memory)
+	fmt.Printf("Swap: %s\n", info.Swap)
 	fmt.Printf("Disk: %s\n", info.Disk)
+	fmt.Printf("Processes: %s\n", info.Processes)
 	for i := 0; i < len(info.Keys); i++ {
 		fmt.Printf("%s: %s\n", info.Keys[i], stripANSI(info.Vals[i]))
 	}

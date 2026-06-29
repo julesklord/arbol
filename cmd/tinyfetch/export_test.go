@@ -104,8 +104,13 @@ func TestPrintJSON(t *testing.T) {
   "uptime": "myuptime",
   "shell": "myshell",
   "cpu": "mycpu",
+  "gpu": "mygpu",
+  "de_wm": "myde_wm",
+  "terminal": "myterminal",
   "memory": "mymem",
+  "swap": "myswap",
   "disk": "mydisk",
+  "processes": "myprocesses",
   "plugins": {
     "key1": "val1",
     "key2": "val2"
@@ -113,16 +118,21 @@ func TestPrintJSON(t *testing.T) {
 }
 `
 	info := SystemInfo{
-		Host:   "myhost",
-		OSName: "myos",
-		Kernel: "mykernel",
-		Uptime: "myuptime",
-		Shell:  "myshell",
-		CPU:    "mycpu",
-		Memory: "mymem",
-		Disk:   "mydisk",
-		Keys:   []string{"key1", "key2"},
-		Vals:   []string{"val1", "val2"},
+		Host:      "myhost",
+		OSName:    "myos",
+		Kernel:    "mykernel",
+		Uptime:    "myuptime",
+		Shell:     "myshell",
+		CPU:       "mycpu",
+		GPU:       "mygpu",
+		DEWM:      "myde_wm",
+		Terminal:  "myterminal",
+		Memory:    "mymem",
+		Swap:      "myswap",
+		Disk:      "mydisk",
+		Processes: "myprocesses",
+		Keys:      []string{"key1", "key2"},
+		Vals:      []string{"val1", "val2"},
 	}
 	output := captureStdout(func() {
 		printJSON(info)
@@ -141,21 +151,31 @@ func TestPrintJSON_NoPlugins(t *testing.T) {
   "uptime": "myuptime",
   "shell": "myshell",
   "cpu": "mycpu",
+  "gpu": "mygpu",
+  "de_wm": "myde_wm",
+  "terminal": "myterminal",
   "memory": "mymem",
-  "disk": "mydisk"
+  "swap": "myswap",
+  "disk": "mydisk",
+  "processes": "myprocesses"
 }
 `
 	info := SystemInfo{
-		Host:   "myhost",
-		OSName: "myos",
-		Kernel: "mykernel",
-		Uptime: "myuptime",
-		Shell:  "myshell",
-		CPU:    "mycpu",
-		Memory: "mymem",
-		Disk:   "mydisk",
-		Keys:   []string{},
-		Vals:   []string{},
+		Host:      "myhost",
+		OSName:    "myos",
+		Kernel:    "mykernel",
+		Uptime:    "myuptime",
+		Shell:     "myshell",
+		CPU:       "mycpu",
+		GPU:       "mygpu",
+		DEWM:      "myde_wm",
+		Terminal:  "myterminal",
+		Memory:    "mymem",
+		Swap:      "myswap",
+		Disk:      "mydisk",
+		Processes: "myprocesses",
+		Keys:      []string{},
+		Vals:      []string{},
 	}
 	output := captureStdout(func() {
 		printJSON(info)
@@ -174,8 +194,13 @@ func TestPrintXML(t *testing.T) {
   <uptime>myuptime</uptime>
   <shell>myshell</shell>
   <cpu>mycpu</cpu>
+  <gpu>mygpu</gpu>
+  <de_wm>myde_wm</de_wm>
+  <terminal>myterminal</terminal>
   <memory>mymem</memory>
+  <swap>myswap</swap>
   <disk>mydisk</disk>
+  <processes>myprocesses</processes>
   <plugins>
     <key1>val1</key1>
     <key_2>val2</key_2>
@@ -183,16 +208,21 @@ func TestPrintXML(t *testing.T) {
 </tinyfetch>
 `
 	info := SystemInfo{
-		Host:   "myhost",
-		OSName: "myos",
-		Kernel: "mykernel",
-		Uptime: "myuptime",
-		Shell:  "myshell",
-		CPU:    "mycpu",
-		Memory: "mymem",
-		Disk:   "mydisk",
-		Keys:   []string{"key1", "key 2"},
-		Vals:   []string{"val1", "val2"},
+		Host:      "myhost",
+		OSName:    "myos",
+		Kernel:    "mykernel",
+		Uptime:    "myuptime",
+		Shell:     "myshell",
+		CPU:       "mycpu",
+		GPU:       "mygpu",
+		DEWM:      "myde_wm",
+		Terminal:  "myterminal",
+		Memory:    "mymem",
+		Swap:      "myswap",
+		Disk:      "mydisk",
+		Processes: "myprocesses",
+		Keys:      []string{"key1", "key 2"},
+		Vals:      []string{"val1", "val2"},
 	}
 	output := captureStdout(func() {
 		printXML(info)
@@ -211,21 +241,31 @@ func TestPrintXML_NoPlugins(t *testing.T) {
   <uptime>myuptime</uptime>
   <shell>myshell</shell>
   <cpu>mycpu</cpu>
+  <gpu>mygpu</gpu>
+  <de_wm>myde_wm</de_wm>
+  <terminal>myterminal</terminal>
   <memory>mymem</memory>
+  <swap>myswap</swap>
   <disk>mydisk</disk>
+  <processes>myprocesses</processes>
 </tinyfetch>
 `
 	info := SystemInfo{
-		Host:   "myhost",
-		OSName: "myos",
-		Kernel: "mykernel",
-		Uptime: "myuptime",
-		Shell:  "myshell",
-		CPU:    "mycpu",
-		Memory: "mymem",
-		Disk:   "mydisk",
-		Keys:   []string{},
-		Vals:   []string{},
+		Host:      "myhost",
+		OSName:    "myos",
+		Kernel:    "mykernel",
+		Uptime:    "myuptime",
+		Shell:     "myshell",
+		CPU:       "mycpu",
+		GPU:       "mygpu",
+		DEWM:      "myde_wm",
+		Terminal:  "myterminal",
+		Memory:    "mymem",
+		Swap:      "myswap",
+		Disk:      "mydisk",
+		Processes: "myprocesses",
+		Keys:      []string{},
+		Vals:      []string{},
 	}
 	output := captureStdout(func() {
 		printXML(info)
@@ -243,22 +283,32 @@ Kernel: mykernel
 Uptime: myuptime
 Shell: myshell
 CPU: mycpu
+GPU: mygpu
+DE/WM: myde_wm
+Terminal: myterminal
 Memory: mymem
+Swap: myswap
 Disk: mydisk
+Processes: myprocesses
 key1: val1
 key 2: val2
 `
 	info := SystemInfo{
-		Host:   "myhost",
-		OSName: "myos",
-		Kernel: "mykernel",
-		Uptime: "myuptime",
-		Shell:  "myshell",
-		CPU:    "mycpu",
-		Memory: "mymem",
-		Disk:   "mydisk",
-		Keys:   []string{"key1", "key 2"},
-		Vals:   []string{"val1", "val2"},
+		Host:      "myhost",
+		OSName:    "myos",
+		Kernel:    "mykernel",
+		Uptime:    "myuptime",
+		Shell:     "myshell",
+		CPU:       "mycpu",
+		GPU:       "mygpu",
+		DEWM:      "myde_wm",
+		Terminal:  "myterminal",
+		Memory:    "mymem",
+		Swap:      "myswap",
+		Disk:      "mydisk",
+		Processes: "myprocesses",
+		Keys:      []string{"key1", "key 2"},
+		Vals:      []string{"val1", "val2"},
 	}
 	output := captureStdout(func() {
 		printTXT(info)
