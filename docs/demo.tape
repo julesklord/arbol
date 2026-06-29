@@ -4,10 +4,10 @@ Output docs/demo.gif
 
 # === Visual Settings ===
 Set FontSize 13
-Set FontFamily "CommitMono Nerd Font Mono"
+Set FontFamily "Hack Nerd Font Mono"
 Set Width 1100
 Set Height 760
-Set Theme "Catppuccin Mocha"
+Set Theme "Monokai Vivid"
 Set Padding 14
 Set TypingSpeed 60ms
 Set PlaybackSpeed 1.0
