@@ -152,6 +152,7 @@ JSON output includes `cpu_usage` and `cpu_temp` fields alongside all core system
 | Variable | Description |
 | :--- | :--- |
 | `ARBOL_PLUGINS_DIR` | Override the default plugin discovery directory |
+| `ARBOL_FETCH_PUBLIC_IP` | Enable external request to fetch Public IP (`true` or `1`) |
 
 ## License
 

@@ -21,8 +21,11 @@ if [ -z "$local_ip" ] && command -v ifconfig >/dev/null 2>&1; then
   local_ip=$(ifconfig 2>/dev/null | grep -E "inet " | grep -v "127.0.0.1" | awk '{print $2; exit}' | sed "s/addr://" || echo "")
 fi
 
-# Get Public IP (with 1s timeout to prevent hanging)
-public_ip=$(curl -s --connect-timeout 1 https://icanhazip.com 2>/dev/null | xargs || echo "")
+# Get Public IP (opt-in required for external request to prevent data exposure)
+public_ip=""
+if [ "${ARBOL_FETCH_PUBLIC_IP:-}" = "true" ] || [ "${ARBOL_FETCH_PUBLIC_IP:-}" = "1" ]; then
+  public_ip=$(curl -s --connect-timeout 1 https://icanhazip.com 2>/dev/null | xargs || echo "")
+fi
 
 # Get DNS Server
 dns_server=""
