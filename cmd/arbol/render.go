@@ -5,6 +5,14 @@ import (
 	"unicode/utf8"
 )
 
+
+const (
+	ansiStateNormal = iota
+	ansiStateEscape
+	ansiStateCSI
+	ansiStateOSC
+)
+
 func runeWidth(r rune) int {
 	// Zero-width space, joiners, control chars, variation selectors
 	if r == '\u200d' || r == '\u200c' || (r >= '\ufe00' && r <= '\ufe0f') {
@@ -51,37 +59,56 @@ func truncateANSI(s string, limit int) string {
 
 	var builder strings.Builder
 	visualLen := 0
-	inEscape := false
-	restoreCode := "\033[0m"
+	restoreCode := "[0m"
 	targetLen := limit - 1
 	if targetLen < 0 {
 		targetLen = 0
 	}
 
-	for i := 0; i < len(s); i++ {
-		if s[i] == '\033' {
-			inEscape = true
-			builder.WriteByte(s[i])
-			continue
-		}
-		if inEscape {
-			builder.WriteByte(s[i])
-			if s[i] == 'm' {
-				inEscape = false
-			}
-			continue
-		}
+	state := ansiStateNormal
 
-		if visualLen < targetLen {
-			r, size := utf8.DecodeRuneInString(s[i:])
-			w := runeWidth(r)
-			if visualLen+w <= targetLen {
-				builder.WriteRune(r)
-				visualLen += w
+	for i := 0; i < len(s); i++ {
+		ch := s[i]
+
+		switch state {
+		case ansiStateNormal:
+			if ch == '' {
+				state = ansiStateEscape
+				builder.WriteByte(ch)
 			} else {
-				visualLen = targetLen
+				if visualLen < targetLen {
+					r, size := utf8.DecodeRuneInString(s[i:])
+					w := runeWidth(r)
+					if visualLen+w <= targetLen {
+						builder.WriteRune(r)
+						visualLen += w
+					} else {
+						visualLen = targetLen
+					}
+					i += size - 1
+				}
 			}
-			i += size - 1
+		case ansiStateEscape:
+			builder.WriteByte(ch)
+			if ch == '[' {
+				state = ansiStateCSI
+			} else if ch == ']' {
+				state = ansiStateOSC
+			} else {
+				state = ansiStateNormal
+			}
+		case ansiStateCSI:
+			builder.WriteByte(ch)
+			if ch >= 0x40 && ch <= 0x7E {
+				state = ansiStateNormal
+			}
+		case ansiStateOSC:
+			builder.WriteByte(ch)
+			if ch == '' {
+				state = ansiStateNormal
+			} else if ch == '' {
+				state = ansiStateEscape
+			}
 		}
 	}
 	builder.WriteString("…")
@@ -91,19 +118,36 @@ func truncateANSI(s string, limit int) string {
 
 func stripANSI(s string) string {
 	var builder strings.Builder
-	inEscape := false
+	state := ansiStateNormal
+
 	for i := 0; i < len(s); i++ {
-		if s[i] == '\033' {
-			inEscape = true
-			continue
-		}
-		if inEscape {
-			if s[i] == 'm' {
-				inEscape = false
+		ch := s[i]
+		switch state {
+		case ansiStateNormal:
+			if ch == '' {
+				state = ansiStateEscape
+			} else {
+				builder.WriteByte(ch)
 			}
-			continue
+		case ansiStateEscape:
+			if ch == '[' {
+				state = ansiStateCSI
+			} else if ch == ']' {
+				state = ansiStateOSC
+			} else {
+				state = ansiStateNormal
+			}
+		case ansiStateCSI:
+			if ch >= 0x40 && ch <= 0x7E {
+				state = ansiStateNormal
+			}
+		case ansiStateOSC:
+			if ch == '' {
+				state = ansiStateNormal
+			} else if ch == '' {
+				state = ansiStateEscape
+			}
 		}
-		builder.WriteByte(s[i])
 	}
 	return builder.String()
 }
