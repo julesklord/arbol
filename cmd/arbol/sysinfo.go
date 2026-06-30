@@ -362,50 +362,58 @@ func getCPUTicks() (user, nice, system, idle, iowait, irq, softirq int64, err er
 	return 0, 0, 0, 0, 0, 0, 0, fmt.Errorf("invalid format")
 }
 
-func getCPUUsage() string {
-	if runtime.GOOS == "linux" {
-		u1, n1, s1, id1, io1, ir1, so1, err1 := getCPUTicks()
-		if err1 != nil {
-			return "n/a"
-		}
-		time.Sleep(50 * time.Millisecond)
-		u2, n2, s2, id2, io2, ir2, so2, err2 := getCPUTicks()
-		if err2 != nil {
-			return "n/a"
-		}
+func getCPUUsage() chan string {
+	ch := make(chan string, 1)
+	go func() {
+		if runtime.GOOS == "linux" {
+			u1, n1, s1, id1, io1, ir1, so1, err1 := getCPUTicks()
+			if err1 != nil {
+				ch <- "n/a"
+				return
+			}
+			time.Sleep(50 * time.Millisecond)
+			u2, n2, s2, id2, io2, ir2, so2, err2 := getCPUTicks()
+			if err2 != nil {
+				ch <- "n/a"
+				return
+			}
 
-		idle1 := id1 + io1
-		idle2 := id2 + io2
+			idle1 := id1 + io1
+			idle2 := id2 + io2
 
-		nonIdle1 := u1 + n1 + s1 + ir1 + so1
-		nonIdle2 := u2 + n2 + s2 + ir2 + so2
+			nonIdle1 := u1 + n1 + s1 + ir1 + so1
+			nonIdle2 := u2 + n2 + s2 + ir2 + so2
 
-		total1 := idle1 + nonIdle1
-		total2 := idle2 + nonIdle2
+			total1 := idle1 + nonIdle1
+			total2 := idle2 + nonIdle2
 
-		totalDiff := total2 - total1
-		idleDiff := idle2 - idle1
+			totalDiff := total2 - total1
+			idleDiff := idle2 - idle1
 
-		if totalDiff > 0 {
-			pct := (totalDiff - idleDiff) * 100 / totalDiff
-			return fmt.Sprintf("%d%%", pct)
-		}
-	} else if runtime.GOOS == "darwin" {
-		out := runCommand("bash", "-c", "ps -A -o %cpu | awk '{s+=$1} END {print s}'")
-		if out != "" {
-			if val, err := strconv.ParseFloat(out, 64); err == nil {
-				cores := runtime.NumCPU()
-				if cores > 0 {
-					pct := int(val / float64(cores))
-					if pct > 100 {
-						pct = 100
+			if totalDiff > 0 {
+				pct := (totalDiff - idleDiff) * 100 / totalDiff
+				ch <- fmt.Sprintf("%d%%", pct)
+				return
+			}
+		} else if runtime.GOOS == "darwin" {
+			out := runCommand("bash", "-c", "ps -A -o %cpu | awk '{s+=$1} END {print s}'")
+			if out != "" {
+				if val, err := strconv.ParseFloat(out, 64); err == nil {
+					cores := runtime.NumCPU()
+					if cores > 0 {
+						pct := int(val / float64(cores))
+						if pct > 100 {
+							pct = 100
+						}
+						ch <- fmt.Sprintf("%d%%", pct)
+						return
 					}
-					return fmt.Sprintf("%d%%", pct)
 				}
 			}
 		}
-	}
-	return "n/a"
+		ch <- "n/a"
+	}()
+	return ch
 }
 
 func getCPUTemp() string {

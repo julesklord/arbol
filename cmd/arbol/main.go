@@ -46,6 +46,8 @@ func parseFlags() (bool, bool, bool, string, string) {
 }
 
 func gatherInfo(pluginsDir string) SystemInfo {
+	cpuUsageChan := getCPUUsage()
+
 	hostname, _ := os.Hostname()
 	osName := getOSName()
 	kernel := runCommand("uname", "-r")
@@ -137,7 +139,7 @@ func gatherInfo(pluginsDir string) SystemInfo {
 		}
 	}
 
-	cpuUsageVal := getCPUUsage()
+	cpuUsageVal := <-cpuUsageChan
 	cpuTempVal := getCPUTemp()
 
 	return SystemInfo{
