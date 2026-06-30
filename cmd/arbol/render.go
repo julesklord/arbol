@@ -52,6 +52,7 @@ func truncateANSI(s string, limit int) string {
 	var builder strings.Builder
 	visualLen := 0
 	inEscape := false
+	isCSI := false
 	restoreCode := "\033[0m"
 	targetLen := limit - 1
 	if targetLen < 0 {
@@ -61,13 +62,23 @@ func truncateANSI(s string, limit int) string {
 	for i := 0; i < len(s); i++ {
 		if s[i] == '\033' {
 			inEscape = true
+			isCSI = false
 			builder.WriteByte(s[i])
 			continue
 		}
 		if inEscape {
 			builder.WriteByte(s[i])
-			if s[i] == 'm' {
+			if !isCSI {
+				if s[i] == '[' {
+					isCSI = true
+				} else {
+					inEscape = false
+				}
+				continue
+			}
+			if s[i] >= 0x40 && s[i] <= 0x7E {
 				inEscape = false
+				isCSI = false
 			}
 			continue
 		}
@@ -92,14 +103,25 @@ func truncateANSI(s string, limit int) string {
 func stripANSI(s string) string {
 	var builder strings.Builder
 	inEscape := false
+	isCSI := false
 	for i := 0; i < len(s); i++ {
 		if s[i] == '\033' {
 			inEscape = true
+			isCSI = false
 			continue
 		}
 		if inEscape {
-			if s[i] == 'm' {
+			if !isCSI {
+				if s[i] == '[' {
+					isCSI = true
+				} else {
+					inEscape = false
+				}
+				continue
+			}
+			if s[i] >= 0x40 && s[i] <= 0x7E {
 				inEscape = false
+				isCSI = false
 			}
 			continue
 		}
