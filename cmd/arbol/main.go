@@ -19,7 +19,7 @@ type TreeNode struct {
 	Children []*TreeNode
 }
 
-func parseFlags() (bool, bool, bool, string, string, string, string, string) {
+func parseFlags() (bool, bool, bool, string, string, string, string, string, bool, int, string) {
 	noASCII := false
 	minimal := false
 	noFrame := false
@@ -28,6 +28,9 @@ func parseFlags() (bool, bool, bool, string, string, string, string, string) {
 	themeName := ""
 	barStyleName := ""
 	treeStyleName := ""
+	sparklineEnabled := false
+	sparklineWidth := 20
+	sparklineStyleName := ""
 
 	for _, arg := range os.Args[1:] {
 		if arg == "--no-ascii" {
@@ -46,15 +49,29 @@ func parseFlags() (bool, bool, bool, string, string, string, string, string) {
 			barStyleName = strings.TrimPrefix(arg, "--bar-style=")
 		} else if strings.HasPrefix(arg, "--tree-style=") {
 			treeStyleName = strings.TrimPrefix(arg, "--tree-style=")
+		} else if strings.HasPrefix(arg, "--sparkline") {
+			if arg == "--sparkline" {
+				sparklineEnabled = true
+			} else if strings.HasPrefix(arg, "--sparkline=") {
+				sparklineEnabled = true
+				val := strings.TrimPrefix(arg, "--sparkline=")
+				if w, err := strconv.Atoi(val); err == nil && w > 0 {
+					sparklineWidth = w
+				}
+			}
+		} else if strings.HasPrefix(arg, "--sparkline-style=") {
+			sparklineStyleName = strings.TrimPrefix(arg, "--sparkline-style=")
 		} else if arg == "--help" || arg == "-h" {
-			fmt.Printf("Usage: %s [--no-ascii] [--minimal] [--noframe] [--logo=simple|banner] [--output=json|xml|txt] [--theme=NAME] [--bar-style=STYLE] [--tree-style=STYLE]\n", os.Args[0])
+			fmt.Printf("Usage: %s [--no-ascii] [--minimal] [--noframe] [--logo=simple|banner] [--output=json|xml|txt] [--theme=NAME] [--bar-style=STYLE] [--tree-style=STYLE] [--sparkline[=WIDTH]] [--sparkline-style=STYLE]\n", os.Args[0])
 			fmt.Println("  Themes: default, catppuccin, catppuccin-mocha, catppuccin-latte, dracula, nord, tokyonight, gruvbox, everforest, monokai, rose-pine, solarized")
 			fmt.Println("  Bar styles: block, braille, gradient, dot")
 			fmt.Println("  Tree styles: default, rounded, heavy, double, ascii, dotted")
+			fmt.Println("  Sparkline styles: block, braille, dots")
+			fmt.Println("  --sparkline[=WIDTH] enables inline sparklines (default width: 20)")
 			os.Exit(0)
 		}
 	}
-	return noASCII, minimal, noFrame, outputFmt, logoMode, themeName, barStyleName, treeStyleName
+	return noASCII, minimal, noFrame, outputFmt, logoMode, themeName, barStyleName, treeStyleName, sparklineEnabled, sparklineWidth, sparklineStyleName
 }
 
 func parseBarStyle(name string) BarStyle {
@@ -90,6 +107,20 @@ func parseTreeStyle(name string) TreeStyle {
 		return TreeStyleDotted
 	default:
 		return TreeStyleDefault
+	}
+}
+
+func parseSparklineStyle(name string) SparklineStyle {
+	name = strings.ToLower(name)
+	switch name {
+	case "block":
+		return SparklineBlock
+	case "braille":
+		return SparklineBraille
+	case "dots":
+		return SparklineDots
+	default:
+		return SparklineBlock
 	}
 }
 
@@ -463,7 +494,7 @@ func drawBannerLogo(osName string) {
 	fmt.Println(gradientString(bot, start[0], start[1], start[2], end[0], end[1], end[2]))
 }
 
-func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj SystemInfo, extPluginsDir, logoMode string) {
+func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj SystemInfo, extPluginsDir, logoMode string, sparklineEnabled bool) {
 	// Intercept output format flag early
 	if outputFmt != "" {
 		switch outputFmt {
@@ -589,13 +620,39 @@ func renderOutput(noASCII, minimal, noFrame bool, outputFmt string, infoObj Syst
 
 	// Resources category
 	resourcesNode := &TreeNode{Text: lcyan + bold + "📊 resources" + reset}
-	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "📈 cpu usage: " + reset + cpuUsageVal})
+
+	// CPU Usage with optional sparkline
+	cpuText := lblue + "📈 cpu usage: " + reset + cpuUsageVal
+	if sparklineEnabled {
+		cpuText += "  " + getSparklineCPU(theme)
+	}
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: cpuText})
+
 	if infoObj.CPUTemp != "n/a" {
 		resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "🌡️ cpu temp: " + reset + italic + infoObj.CPUTemp + reset})
 	}
-	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "💾 memory: " + reset + memVal})
-	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "🔄 swap: " + reset + swapVal})
-	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "💿 disk: " + reset + diskVal})
+
+	// Memory with optional sparkline
+	memText := lblue + "💾 memory: " + reset + memVal
+	if sparklineEnabled {
+		memText += "  " + getSparklineMem(theme)
+	}
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: memText})
+
+	// Swap with optional sparkline
+	swapText := lblue + "🔄 swap: " + reset + swapVal
+	if sparklineEnabled {
+		swapText += "  " + getSparklineSwap(theme)
+	}
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: swapText})
+
+	// Disk with optional sparkline
+	diskText := lblue + "💿 disk: " + reset + diskVal
+	if sparklineEnabled {
+		diskText += "  " + getSparklineDisk(theme)
+	}
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: diskText})
+
 	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "⚡ processes: " + reset + italic + infoObj.Processes + reset})
 	root.Children = append(root.Children, resourcesNode)
 
@@ -698,7 +755,7 @@ func getPluginsDir() string {
 }
 
 func main() {
-	noASCII, minimal, noFrame, outputFmt, logoMode, themeName, barStyleName, treeStyleName := parseFlags()
+	noASCII, minimal, noFrame, outputFmt, logoMode, themeName, barStyleName, treeStyleName, sparklineEnabled, sparklineWidth, sparklineStyleName := parseFlags()
 
 	if themeName != "" {
 		if !SetTheme(themeName) {
@@ -717,8 +774,19 @@ func main() {
 		SetTreeStyle(style)
 	}
 
+	if sparklineStyleName != "" {
+		style := parseSparklineStyle(sparklineStyleName)
+		SetSparklineStyle(style)
+	}
+
+	if sparklineEnabled {
+		initSparklines(sparklineWidth, 500*time.Millisecond)
+		// Give sparklines a moment to collect initial data
+		time.Sleep(100 * time.Millisecond)
+	}
+
 	pluginsDir := getPluginsDir()
 	extPluginsDir := filepath.Join(pluginsDir, "extended")
 	infoObj := gatherInfo(pluginsDir)
-	renderOutput(noASCII, minimal, noFrame, outputFmt, infoObj, extPluginsDir, logoMode)
+	renderOutput(noASCII, minimal, noFrame, outputFmt, infoObj, extPluginsDir, logoMode, sparklineEnabled)
 }
