@@ -19,7 +19,7 @@ type TreeNode struct {
 	Children []*TreeNode
 }
 
-func parseFlags() (bool, bool, bool, string, string, string, string) {
+func parseFlags() (bool, bool, bool, string, string, string, string, string) {
 	noASCII := false
 	minimal := false
 	noFrame := false
@@ -27,6 +27,7 @@ func parseFlags() (bool, bool, bool, string, string, string, string) {
 	logoMode := "banner" // default is banner
 	themeName := ""
 	barStyleName := ""
+	treeStyleName := ""
 
 	for _, arg := range os.Args[1:] {
 		if arg == "--no-ascii" {
@@ -43,14 +44,17 @@ func parseFlags() (bool, bool, bool, string, string, string, string) {
 			themeName = strings.TrimPrefix(arg, "--theme=")
 		} else if strings.HasPrefix(arg, "--bar-style=") {
 			barStyleName = strings.TrimPrefix(arg, "--bar-style=")
+		} else if strings.HasPrefix(arg, "--tree-style=") {
+			treeStyleName = strings.TrimPrefix(arg, "--tree-style=")
 		} else if arg == "--help" || arg == "-h" {
-			fmt.Printf("Usage: %s [--no-ascii] [--minimal] [--noframe] [--logo=simple|banner] [--output=json|xml|txt] [--theme=NAME] [--bar-style=STYLE]\n", os.Args[0])
+			fmt.Printf("Usage: %s [--no-ascii] [--minimal] [--noframe] [--logo=simple|banner] [--output=json|xml|txt] [--theme=NAME] [--bar-style=STYLE] [--tree-style=STYLE]\n", os.Args[0])
 			fmt.Println("  Themes: default, catppuccin, catppuccin-mocha, catppuccin-latte, dracula, nord, tokyonight, gruvbox, everforest, monokai, rose-pine, solarized")
 			fmt.Println("  Bar styles: block, braille, gradient, dot")
+			fmt.Println("  Tree styles: default, rounded, heavy, double, ascii, dotted")
 			os.Exit(0)
 		}
 	}
-	return noASCII, minimal, noFrame, outputFmt, logoMode, themeName, barStyleName
+	return noASCII, minimal, noFrame, outputFmt, logoMode, themeName, barStyleName, treeStyleName
 }
 
 func parseBarStyle(name string) BarStyle {
@@ -66,6 +70,26 @@ func parseBarStyle(name string) BarStyle {
 		return BarStyleDot
 	default:
 		return BarStyleBraille
+	}
+}
+
+func parseTreeStyle(name string) TreeStyle {
+	name = strings.ToLower(name)
+	switch name {
+	case "default":
+		return TreeStyleDefault
+	case "rounded":
+		return TreeStyleRounded
+	case "heavy":
+		return TreeStyleHeavy
+	case "double":
+		return TreeStyleDouble
+	case "ascii":
+		return TreeStyleASCII
+	case "dotted":
+		return TreeStyleDotted
+	default:
+		return TreeStyleDefault
 	}
 }
 
@@ -370,14 +394,18 @@ func loadASCIILogoBanner() []string {
 }
 
 func printTree(node *TreeNode, prefixes []string, isLast bool) {
+	connectors := GetConnectors()
+	theme := GetTheme()
+	treeColor := theme.TreeLines
+
 	if len(prefixes) > 0 {
 		for _, p := range prefixes[:len(prefixes)-1] {
-			fmt.Print(GetTheme().TreeLines + p + "\033[0m")
+			fmt.Print(treeColor + p + "\033[0m")
 		}
 		if isLast {
-			fmt.Print(GetTheme().TreeLines + "└── \033[0m")
+			fmt.Print(treeColor + connectors.LastBranch + "\033[0m")
 		} else {
-			fmt.Print(GetTheme().TreeLines + "├── \033[0m")
+			fmt.Print(treeColor + connectors.Branch + "\033[0m")
 		}
 	}
 	fmt.Println(node.Text)
@@ -387,12 +415,12 @@ func printTree(node *TreeNode, prefixes []string, isLast bool) {
 		if len(prefixes) > 0 {
 			nextPrefixes = append(nextPrefixes, prefixes...)
 			if isLast {
-				nextPrefixes[len(nextPrefixes)-1] = "    "
+				nextPrefixes[len(nextPrefixes)-1] = connectors.Space
 			} else {
-				nextPrefixes[len(nextPrefixes)-1] = "│   "
+				nextPrefixes[len(nextPrefixes)-1] = connectors.Vertical
 			}
 		}
-		nextPrefixes = append(nextPrefixes, "│   ")
+		nextPrefixes = append(nextPrefixes, connectors.Vertical)
 		printTree(child, nextPrefixes, i == len(node.Children)-1)
 	}
 }
@@ -670,7 +698,7 @@ func getPluginsDir() string {
 }
 
 func main() {
-	noASCII, minimal, noFrame, outputFmt, logoMode, themeName, barStyleName := parseFlags()
+	noASCII, minimal, noFrame, outputFmt, logoMode, themeName, barStyleName, treeStyleName := parseFlags()
 
 	if themeName != "" {
 		if !SetTheme(themeName) {
@@ -682,6 +710,11 @@ func main() {
 	if barStyleName != "" {
 		style := parseBarStyle(barStyleName)
 		SetBarStyle(style)
+	}
+
+	if treeStyleName != "" {
+		style := parseTreeStyle(treeStyleName)
+		SetTreeStyle(style)
 	}
 
 	pluginsDir := getPluginsDir()
