@@ -54,7 +54,56 @@ arbol
 | `--noframe` | | Omit the box borders and print layout side-by-side using spaces. |
 | `--output=FORMAT` | | Serialize system stats and simple plugins into structured output: `json`, `xml`, or `txt`. |
 | `--logo=MODE` | | Control the ASCII logo style: `simple` (default glyph block art) or `banner` (solid filled block art). |
+| `--theme=NAME` | | Color theme: `default`, `catppuccin`, `catppuccin-mocha`, `catppuccin-latte`, `dracula`, `nord`, `tokyonight`, `gruvbox`, `everforest`, `monokai`, `rose-pine`, `solarized`. |
+| `--bar-style=STYLE` | | Progress bar style: `block`, `braille`, `gradient`, `dot`. |
+| `--tree-style=STYLE` | | Tree connector style: `default`, `rounded`, `heavy`, `double`, `ascii`, `dotted`. |
+| `--sparkline[=WIDTH]` | | Enable inline sparklines for resources (default width: 20). |
+| `--sparkline-style=STYLE` | | Sparkline style: `block`, `braille`, `dots`. |
+| `--live[=MS]` | | Live updating mode with interval in ms (default: 1000). |
 | `--plugins-dir=PATH` | | Override plugin discovery directory (also via `ARBOL_PLUGINS_DIR` env var). |
+
+## Visual Features
+
+### 🎨 12 Color Themes
+```
+--theme=catppuccin    --theme=dracula      --theme=nord
+--theme=tokyonight    --theme=gruvbox      --theme=everforest
+--theme=monokai       --theme=rose-pine    --theme=solarized
+```
+
+### 📊 4 Progress Bar Styles
+```
+--bar-style=block     ████░░░░░░ 46%
+--bar-style=braille   ⠿⠿⠿⠿⠏⠀⠀⠀⠀⠀ 46%  (8x resolution)
+--bar-style=gradient  █▓▒░░░░░░░ 46%  (4-color gradient)
+--bar-style=dot       ●●●●○○○○○○ 46%
+```
+
+### 🌲 6 Tree Connector Styles
+```
+--tree-style=default   ├── ── │   └──
+--tree-style=rounded   ╭── ── │   ╰──
+--tree-style=heavy     ┏━━ ━━ ┃   ┗━━
+--tree-style=double    ╠══ ══ ║   ╚══
+--tree-style=ascii     |-- -- |   +--
+--tree-style=dotted    ┆ ┆ ┆   ┆ ┆
+```
+
+### 📈 Inline Sparklines
+```
+--sparkline --sparkline-style=braille --sparkline=30
+
+📈 cpu usage:  ██░░░░░░░░ 12%  ▁▂▁▃▅▆▇█▆▅▃▃▂▁
+💾 memory:     ████░░░░░░ 36%  ▂▂▂▃▃▄▅▅▆▇
+🔄 swap:       ██░░░░░░░░ 18%  ▂▂▂▂▂▂▂▂▂▂
+💿 disk:       ████░░░░░░ 44%  ▃▃▃▄▄▅▅▆▆▇
+```
+
+### 🔴 Live Mode
+```
+arbol --live=500 --theme=catppuccin --sparkline
+```
+Real-time updating display with sparklines showing metric history.
 
 ## What It Shows
 
