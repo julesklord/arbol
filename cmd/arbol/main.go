@@ -142,23 +142,30 @@ func parseSparklineStyle(name string) SparklineStyle {
 }
 
 func gatherInfo(pluginsDir string) SystemInfo {
-	hostname, _ := os.Hostname()
-	osName := getOSName()
-	kernel := runCommand("uname", "-r")
-	uptimeVal := getUptime()
-	shellVal := os.Getenv("SHELL")
+	var wg sync.WaitGroup
+	var hostname, osName, kernel, uptimeVal, shellVal, cpuVal, gpuVal, dewmVal, termVal string
+	var memRaw, swapRaw, diskRaw, procVal, cpuUsageVal, cpuTempVal string
+
+	shellVal = os.Getenv("SHELL")
 	if shellVal == "" {
 		shellVal = "sh"
 	}
-	cpuVal := getCPU()
-	gpuVal := getGPU()
-	dewmVal := getDEWM()
-	termVal := getTerminal()
 
-	memRaw := getMemory()
-	swapRaw := getSwap()
-	diskRaw := getDisk()
-	procVal := getProcesses()
+	wg.Add(14)
+	go func() { defer wg.Done(); hostname, _ = os.Hostname() }()
+	go func() { defer wg.Done(); osName = getOSName() }()
+	go func() { defer wg.Done(); kernel = runCommand("uname", "-r") }()
+	go func() { defer wg.Done(); uptimeVal = getUptime() }()
+	go func() { defer wg.Done(); cpuVal = getCPU() }()
+	go func() { defer wg.Done(); gpuVal = getGPU() }()
+	go func() { defer wg.Done(); dewmVal = getDEWM() }()
+	go func() { defer wg.Done(); termVal = getTerminal() }()
+	go func() { defer wg.Done(); memRaw = getMemory() }()
+	go func() { defer wg.Done(); swapRaw = getSwap() }()
+	go func() { defer wg.Done(); diskRaw = getDisk() }()
+	go func() { defer wg.Done(); procVal = getProcesses() }()
+	go func() { defer wg.Done(); cpuUsageVal = getCPUUsage() }()
+	go func() { defer wg.Done(); cpuTempVal = getCPUTemp() }()
 
 	var plugins []PluginInfo
 
@@ -233,8 +240,9 @@ func gatherInfo(pluginsDir string) SystemInfo {
 		}
 	}
 
-	cpuUsageVal := getCPUUsage()
-	cpuTempVal := getCPUTemp()
+	// cpuUsageVal and cpuTempVal are gathered concurrently
+
+	wg.Wait()
 
 	return SystemInfo{
 		Host:      hostname,

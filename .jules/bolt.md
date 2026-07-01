@@ -1,0 +1,3 @@
+## 2024-05-18 - Async System Calls Optimization
+**Learning:** In Go-based CLI status fetchers, sequential synchronous shell commands (`os/exec`) often become the primary execution bottleneck, bound by the sum of individual command latencies rather than CPU processing time. The time taken to execute `gatherInfo` dropped from ~2.5s down to ~0.7s when running metrics concurrently in a single goroutine batch (even with a sleep delay inside the CPU metric collector).
+**Action:** Always verify if independent I/O or shell tasks can be grouped and executed inside goroutines combined with `sync.WaitGroup` to mask blocking latency in performance-sensitive terminal utilities.
