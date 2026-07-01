@@ -14,7 +14,7 @@ const (
 	BarStyleDot
 )
 
-var currentBarStyle = BarStyleBraille
+var currentBarStyle = BarStyleBlock
 
 func SetBarStyle(style BarStyle) {
 	currentBarStyle = style
