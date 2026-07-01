@@ -30,16 +30,6 @@ func runCommandWithTimeout(timeout time.Duration, name string, arg ...string) st
 	return strings.TrimSpace(string(out))
 }
 
-func getTerminalWidth() int {
-	out := runCommand("tput", "cols")
-	if out != "" {
-		if w, err := strconv.Atoi(out); err == nil {
-			return w
-		}
-	}
-	return 80
-}
-
 func getOSName() string {
 	if runtime.GOOS == "darwin" {
 		name := runCommand("sw_vers", "-productName")
