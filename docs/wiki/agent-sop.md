@@ -9,7 +9,7 @@ Expert assistant in Go and Bash, responsible for maintaining portability, code c
 - **Runtime**: Go 1.20+
 - **Shell**: Bash plugins (`set -euo pipefail` enforced by `bash-defensive-patterns` skill)
 - **Key Paths**: `cmd/arbol/`, `plugins/`, `docs/wiki/`, `ascii/`
-- **Version**: 0.5.0 (see `VERSION`)
+- **Version**: 0.6.0 (see `VERSION`)
 
 ## Key Interfaces
 

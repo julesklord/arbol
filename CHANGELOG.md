@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.6.0 - Code Health, Security Hardening & Performance Optimizations
+- Improved ANSI escape sequence stripping to handle all CSI terminators (0x40-0x7E) instead of only `m`, preventing evasion (#26).
+- Added execution timeouts (2s) for `getDisk` and `getGPU` commands to prevent hanging on unresponsive hardware (#27).
+- Optimized `getProcesses` on Linux using `syscall.Sysinfo` (~83x faster, from 92µs to 1µs) (#19).
+- Removed unused code: `noFrame` parameter, `getTerminalWidth`, `padString`, and `DIM` variable in battery plugin (#18, #20, #21).
+- Changed default bar style from Braille to Block for better cross-terminal readability (#30).
+- Cleaned up leftover patch files and untracked development artifacts.
+
 ## 0.5.0 - Project Renaming, Rich Graphical Plugins & CPU Resources
 - Renamed the entire project from `tinyfetch` to `arbol` across modules, file paths, variables, configuration files, and documentation.
 - Integrated a real-time CPU usage monitor with a progress bar and CPU temperature detection in default resources.

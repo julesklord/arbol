@@ -4,7 +4,7 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Built With](https://img.shields.io/badge/Built%20With-Go-brightgreen.svg)](go.mod)
-[![Version](https://img.shields.io/badge/version-0.5.0-orange.svg)](VERSION)
+[![Version](https://img.shields.io/badge/version-0.6.0-orange.svg)](VERSION)
 
 ## Demo
 

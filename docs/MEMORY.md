@@ -6,7 +6,7 @@ This file serves as persistent memory for long sessions with AI agents. Don't fo
 
 ## Current Status
 
-- **Version**: 0.5.0
+- **Version**: 0.6.0
 - **Current Milestone**: 0.5.0 — Graphical plugin metrics, CPU resources, and project renaming complete.
 - **Blockers**: None.
 - **Next Step**: Polish structured export parity (cpu_usage/cpu_temp in all export formats), consider `--config` support for layout preferences.

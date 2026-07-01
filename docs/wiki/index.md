@@ -2,7 +2,7 @@
 
 Welcome. This wiki follows the Jules Dev Standard and FMG Development Bible.
 
-**Current version**: 0.5.0
+**Current version**: 0.6.0
 
 ## Table of Contents
 
