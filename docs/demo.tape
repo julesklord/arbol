@@ -3,14 +3,14 @@
 Output docs/demo.gif
 
 # === Visual Settings ===
-Set FontSize 13
-Set FontFamily "Hack Nerd Font Mono"
+Set FontSize 12
+Set FontFamily "Iosevka Nerd Font Mono"
 Set Width 1100
 Set Height 760
 Set Theme "Monokai Vivid"
 Set Padding 14
-Set TypingSpeed 60ms
-Set PlaybackSpeed 1.0
+Set TypingSpeed 100ms
+Set PlaybackSpeed 0.8
 Set CursorBlink false
 
 # === Launch shell silently, then run arbol ===
