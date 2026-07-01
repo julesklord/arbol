@@ -1,0 +1,27 @@
+<<<<<<< SEARCH
+func getProcesses() string {
+	if runtime.GOOS == "linux" {
+		files, err := os.ReadDir("/proc")
+		if err == nil {
+			count := 0
+			for _, f := range files {
+				if f.IsDir() {
+					if _, err := strconv.Atoi(f.Name()); err == nil {
+						count++
+					}
+				}
+			}
+			return strconv.Itoa(count)
+		}
+	}
+	out := runCommand("bash", "-c", "ps -ax | wc -l")
+=======
+func getProcesses() string {
+	if runtime.GOOS == "linux" {
+		var info syscall.Sysinfo_t
+		if err := syscall.Sysinfo(&info); err == nil {
+			return strconv.FormatUint(uint64(info.Procs), 10)
+		}
+	}
+	out := runCommand("bash", "-c", "ps -ax | wc -l")
+>>>>>>> REPLACE

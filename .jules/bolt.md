@@ -1,0 +1,3 @@
+## 2024-06-30 - Optimize Linux process counting
+**Learning:** Iterating over and reading directory entries in `/proc` just to count the number of processes can be extremely slow on systems with many active processes, taking roughly 92 µs per operation on a test environment. System calls like `syscall.Sysinfo` offer a direct, highly optimized mechanism to retrieve kernel statistics without the overhead of file system I/O and string parsing.
+**Action:** When gathering system-level metrics (such as the number of running processes, total RAM, or uptime), prefer using system calls (`syscall` or `golang.org/x/sys/unix`) instead of parsing the `/proc` filesystem directly, provided the OS allows it. This ensures optimal performance and lower CPU/memory footprint.

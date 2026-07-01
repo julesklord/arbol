@@ -316,28 +316,6 @@ func getSwap() string {
 	return "n/a"
 }
 
-func getProcesses() string {
-	if runtime.GOOS == "linux" {
-		files, err := os.ReadDir("/proc")
-		if err == nil {
-			count := 0
-			for _, f := range files {
-				if f.IsDir() {
-					if _, err := strconv.Atoi(f.Name()); err == nil {
-						count++
-					}
-				}
-			}
-			return strconv.Itoa(count)
-		}
-	}
-	out := runCommand("bash", "-c", "ps -ax | wc -l")
-	if out != "" {
-		return strings.TrimSpace(out)
-	}
-	return "n/a"
-}
-
 func getCPUTicks() (user, nice, system, idle, iowait, irq, softirq int64, err error) {
 	file, err := os.Open("/proc/stat")
 	if err != nil {

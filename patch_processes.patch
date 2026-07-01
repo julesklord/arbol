@@ -1,0 +1,27 @@
+--- cmd/arbol/sysinfo.go
++++ cmd/arbol/sysinfo.go
+@@ -317,21 +317,6 @@
+	return "n/a"
+ }
+
+-func getProcesses() string {
+-	if runtime.GOOS == "linux" {
+-		files, err := os.ReadDir("/proc")
+-		if err == nil {
+-			count := 0
+-			for _, f := range files {
+-				if f.IsDir() {
+-					if _, err := strconv.Atoi(f.Name()); err == nil {
+-						count++
+-					}
+-				}
+-			}
+-			return strconv.Itoa(count)
+-		}
+-	}
+-	out := runCommand("bash", "-c", "ps -ax | wc -l")
+-	if out != "" {
+-		return strings.TrimSpace(out)
+-	}
+-	return "n/a"
+-}
