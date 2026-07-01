@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+var version = "dev"
+
 type TreeNode struct {
 	Text     string
 	Children []*TreeNode
@@ -72,6 +74,9 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 					liveInterval = ms
 				}
 			}
+		} else if arg == "--version" || arg == "-v" {
+			fmt.Println("arbol version", version)
+			os.Exit(0)
 		} else if arg == "--help" || arg == "-h" {
 			fmt.Printf("Usage: %s [--no-ascii] [--minimal] [--noframe] [--logo=simple|banner] [--output=json|xml|txt] [--theme=NAME] [--bar-style=STYLE] [--tree-style=STYLE] [--sparkline[=WIDTH]] [--sparkline-style=STYLE] [--live[=MS]]\n", os.Args[0])
 			fmt.Println("  Themes: default, catppuccin, catppuccin-mocha, catppuccin-latte, dracula, nord, tokyonight, gruvbox, everforest, monokai, rose-pine, solarized")
