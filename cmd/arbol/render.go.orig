@@ -54,8 +54,6 @@ func runeWidth(r rune) int {
 	return 1
 }
 
-// visualLength computes string length without ANSI sequences.
-// Optimization: Processes string in a single pass without allocating a stripped copy, and uses a fast path for common ASCII chars.
 func visualLength(s string) int {
 	length := 0
 	inEscape := false
@@ -156,8 +154,6 @@ func truncateANSI(s string, limit int) string {
 	return builder.String()
 }
 
-// stripANSI removes ANSI escape sequences from a string.
-// Optimization: Preallocates string builder to avoid repeated slice reallocations.
 func stripANSI(s string) string {
 	var builder strings.Builder
 	builder.Grow(len(s))
