@@ -88,60 +88,60 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 			os.Exit(0)
 		} else {
 			fmt.Fprintf(os.Stderr, "Unknown flag: %s\n", arg)
-			fmt.Fprintf(os.Stderr, "Run '%s --help' for a complete list of available options.\n", os.Args[0])
+			fmt.Printf("Usage: %s [--no-ascii] [--minimal] [--noframe] [--logo=simple|banner] [--output=json|xml|txt]\n", os.Args[0])
 			os.Exit(1)
 		}
 	}
 	return noASCII, minimal, outputFmt, logoMode, themeName, barStyleName, treeStyleName, sparklineEnabled, sparklineWidth, sparklineStyleName, liveEnabled, liveInterval
 }
 
-func parseBarStyle(name string) (BarStyle, bool) {
+func parseBarStyle(name string) BarStyle {
 	name = strings.ToLower(name)
 	switch name {
 	case "block":
-		return BarStyleBlock, true
+		return BarStyleBlock
 	case "braille":
-		return BarStyleBraille, true
+		return BarStyleBraille
 	case "gradient":
-		return BarStyleGradient, true
+		return BarStyleGradient
 	case "dot":
-		return BarStyleDot, true
+		return BarStyleDot
 	default:
-		return BarStyleBlock, false
+		return BarStyleBraille
 	}
 }
 
-func parseTreeStyle(name string) (TreeStyle, bool) {
+func parseTreeStyle(name string) TreeStyle {
 	name = strings.ToLower(name)
 	switch name {
 	case "default":
-		return TreeStyleDefault, true
+		return TreeStyleDefault
 	case "rounded":
-		return TreeStyleRounded, true
+		return TreeStyleRounded
 	case "heavy":
-		return TreeStyleHeavy, true
+		return TreeStyleHeavy
 	case "double":
-		return TreeStyleDouble, true
+		return TreeStyleDouble
 	case "ascii":
-		return TreeStyleASCII, true
+		return TreeStyleASCII
 	case "dotted":
-		return TreeStyleDotted, true
+		return TreeStyleDotted
 	default:
-		return TreeStyleDefault, false
+		return TreeStyleDefault
 	}
 }
 
-func parseSparklineStyle(name string) (SparklineStyle, bool) {
+func parseSparklineStyle(name string) SparklineStyle {
 	name = strings.ToLower(name)
 	switch name {
 	case "block":
-		return SparklineBlock, true
+		return SparklineBlock
 	case "braille":
-		return SparklineBraille, true
+		return SparklineBraille
 	case "dots":
-		return SparklineDots, true
+		return SparklineDots
 	default:
-		return SparklineBlock, false
+		return SparklineBlock
 	}
 }
 
@@ -817,38 +817,22 @@ func main() {
 	if themeName != "" {
 		if !SetTheme(themeName) {
 			fmt.Fprintf(os.Stderr, "Unknown theme: %s\n", themeName)
-			fmt.Fprintf(os.Stderr, "Run '%s --help' for a complete list of available options.\n", os.Args[0])
 			os.Exit(1)
 		}
 	}
 
 	if barStyleName != "" {
-		style, ok := parseBarStyle(barStyleName)
-		if !ok {
-			fmt.Fprintf(os.Stderr, "Unknown bar style: %s\n", barStyleName)
-			fmt.Fprintf(os.Stderr, "Run '%s --help' for a complete list of available options.\n", os.Args[0])
-			os.Exit(1)
-		}
+		style := parseBarStyle(barStyleName)
 		SetBarStyle(style)
 	}
 
 	if treeStyleName != "" {
-		style, ok := parseTreeStyle(treeStyleName)
-		if !ok {
-			fmt.Fprintf(os.Stderr, "Unknown tree style: %s\n", treeStyleName)
-			fmt.Fprintf(os.Stderr, "Run '%s --help' for a complete list of available options.\n", os.Args[0])
-			os.Exit(1)
-		}
+		style := parseTreeStyle(treeStyleName)
 		SetTreeStyle(style)
 	}
 
 	if sparklineStyleName != "" {
-		style, ok := parseSparklineStyle(sparklineStyleName)
-		if !ok {
-			fmt.Fprintf(os.Stderr, "Unknown sparkline style: %s\n", sparklineStyleName)
-			fmt.Fprintf(os.Stderr, "Run '%s --help' for a complete list of available options.\n", os.Args[0])
-			os.Exit(1)
-		}
+		style := parseSparklineStyle(sparklineStyleName)
 		SetSparklineStyle(style)
 	}
 
