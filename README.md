@@ -6,7 +6,6 @@
 [![Built With](https://img.shields.io/badge/Built%20With-Go-brightgreen.svg)](go.mod)
 [![Version](https://img.shields.io/badge/version-0.6.0-orange.svg)](VERSION)
 [![Release](https://img.shields.io/github/v/release/julesklord/arbol?color=blue&label=release)](https://github.com/julesklord/arbol/releases/latest)
-[![Release](https://github.com/julesklord/arbol/actions/workflows/release.yml/badge.svg?event=release)](https://github.com/julesklord/arbol/actions/workflows/release.yml)
 [![CI](https://github.com/julesklord/arbol/actions/workflows/ci.yml/badge.svg)](https://github.com/julesklord/arbol/actions/workflows/ci.yml)
 
 ## Demo
