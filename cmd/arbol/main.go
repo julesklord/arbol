@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -780,10 +782,13 @@ func runLiveMode(noASCII, minimal bool, outputFmt, logoMode string, intervalMs i
 
 	// Clear screen and hide cursor
 	fmt.Print("\033[2J\033[H\033[?25l")
-	defer fmt.Print("\033[?25h") // Show cursor on exit
+	defer fmt.Print("\033[?25h\n") // Show cursor on exit
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	for {
 		select {
@@ -792,6 +797,8 @@ func runLiveMode(noASCII, minimal bool, outputFmt, logoMode string, intervalMs i
 			// Move cursor to top-left
 			fmt.Print("\033[H")
 			renderOutput(noASCII, minimal, outputFmt, infoObj, extPluginsDir, logoMode, true)
+		case <-sigs:
+			return
 		}
 	}
 }
