@@ -16,6 +16,14 @@ import (
 
 var version = "dev"
 
+var ColorDisabled bool
+
+func init() {
+	if os.Getenv("NO_COLOR") != "" {
+		ColorDisabled = true
+	}
+}
+
 type TreeNode struct {
 	Text     string
 	Children []*TreeNode
@@ -460,15 +468,31 @@ func printTree(node *TreeNode, prefixes []string, isLast bool) {
 
 	if len(prefixes) > 0 {
 		for _, p := range prefixes[:len(prefixes)-1] {
-			fmt.Print(treeColor + p + "\033[0m")
+			if ColorDisabled {
+				fmt.Print(p)
+			} else {
+				fmt.Print(treeColor + p + "\033[0m")
+			}
 		}
 		if isLast {
-			fmt.Print(treeColor + connectors.LastBranch + "\033[0m")
+			if ColorDisabled {
+				fmt.Print(connectors.LastBranch)
+			} else {
+				fmt.Print(treeColor + connectors.LastBranch + "\033[0m")
+			}
 		} else {
-			fmt.Print(treeColor + connectors.Branch + "\033[0m")
+			if ColorDisabled {
+				fmt.Print(connectors.Branch)
+			} else {
+				fmt.Print(treeColor + connectors.Branch + "\033[0m")
+			}
 		}
 	}
-	fmt.Println(node.Text)
+	if ColorDisabled {
+		fmt.Println(stripANSI(node.Text))
+	} else {
+		fmt.Println(node.Text)
+	}
 
 	for i, child := range node.Children {
 		var nextPrefixes []string
@@ -486,6 +510,9 @@ func printTree(node *TreeNode, prefixes []string, isLast bool) {
 }
 
 func gradientString(s string, r1, g1, b1, r2, g2, b2 int) string {
+	if ColorDisabled {
+		return stripANSI(s)
+	}
 	runes := []rune(s)
 	n := len(runes)
 	if n <= 1 {
@@ -514,6 +541,13 @@ func drawBannerLogo(osName string) {
 	top := "╔" + strings.Repeat("═", width-2) + "╗"
 	mid := "║" + content + "║"
 	bot := "╚" + strings.Repeat("═", width-2) + "╝"
+
+	if ColorDisabled {
+		fmt.Println(top)
+		fmt.Println(mid)
+		fmt.Println(bot)
+		return
+	}
 
 	start := theme.BannerGradient[0]
 	end := theme.BannerGradient[1]
@@ -591,13 +625,25 @@ func renderOutput(noASCII, minimal bool, outputFmt string, infoObj SystemInfo, e
 	lblue := theme.Secondary
 	lcyan := theme.Primary
 
+	if ColorDisabled {
+		bold = ""
+		italic = ""
+		reset = ""
+		lblue = ""
+		lcyan = ""
+	}
+
 	// Render Logo/Banner Header at the top
 	if !noASCII {
 		switch logoMode {
 		case "simple":
 			logo := loadASCIILogo()
 			for _, line := range logo {
-				fmt.Println(line)
+				if ColorDisabled {
+					fmt.Println(stripANSI(line))
+				} else {
+					fmt.Println(line)
+				}
 			}
 			if len(logo) > 0 {
 				fmt.Println()
@@ -691,8 +737,14 @@ func renderOutput(noASCII, minimal bool, outputFmt string, infoObj SystemInfo, e
 		for _, plug := range infoObj.Plugins {
 			key := strings.ToLower(plug.Key)
 			val := plug.Val
+			if ColorDisabled {
+				val = stripANSI(val)
+			}
 			plugNode := &TreeNode{Text: lblue + key + ": " + reset + val}
 			for _, det := range plug.Details {
+				if ColorDisabled {
+					det = stripANSI(det)
+				}
 				plugNode.Children = append(plugNode.Children, &TreeNode{Text: det})
 			}
 			pluginsNode.Children = append(pluginsNode.Children, plugNode)
@@ -750,6 +802,9 @@ func renderOutput(noASCII, minimal bool, outputFmt string, infoObj SystemInfo, e
 				if res.ok {
 					pluginNode := &TreeNode{Text: lblue + strings.ToLower(res.name) + reset}
 					for _, line := range res.lines {
+						if ColorDisabled {
+							line = stripANSI(line)
+						}
 						pluginNode.Children = append(pluginNode.Children, &TreeNode{Text: line})
 					}
 					diagChildren = append(diagChildren, pluginNode)
