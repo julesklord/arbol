@@ -186,15 +186,21 @@ func getBlockBar(pct int, color, gray, restore string) string {
 	empty := 10 - filled
 
 	var sb strings.Builder
-	sb.WriteString(color)
+	if !ColorDisabled {
+		sb.WriteString(color)
+	}
 	for i := 0; i < filled; i++ {
 		sb.WriteString("█")
 	}
-	sb.WriteString(restore + gray)
+	if !ColorDisabled {
+		sb.WriteString(restore + gray)
+	}
 	for i := 0; i < empty; i++ {
 		sb.WriteString("░")
 	}
-	sb.WriteString(restore)
+	if !ColorDisabled {
+		sb.WriteString(restore)
+	}
 	return sb.String()
 }
 
@@ -219,20 +225,28 @@ func getBrailleBar(pct int, color, gray, restore string) string {
 	partialSegments := filledSegments % 8
 
 	var sb strings.Builder
-	sb.WriteString(color)
+	if !ColorDisabled {
+		sb.WriteString(color)
+	}
 	for i := 0; i < fullChars; i++ {
 		sb.WriteString("⠿")
 	}
 	if fullChars < 10 {
 		sb.WriteString(braillePatterns[partialSegments])
-		sb.WriteString(restore + gray)
+		if !ColorDisabled {
+			sb.WriteString(restore + gray)
+		}
 		for i := fullChars + 1; i < 10; i++ {
 			sb.WriteString("⠀")
 		}
 	} else {
-		sb.WriteString(restore + gray)
+		if !ColorDisabled {
+			sb.WriteString(restore + gray)
+		}
 	}
-	sb.WriteString(restore)
+	if !ColorDisabled {
+		sb.WriteString(restore)
+	}
 	return sb.String()
 }
 
@@ -258,14 +272,20 @@ func getGradientBar(pct int, restore, gray string) string {
 		if colorIdx > 3 {
 			colorIdx = 3
 		}
-		sb.WriteString(gradientColors[colorIdx])
+		if !ColorDisabled {
+			sb.WriteString(gradientColors[colorIdx])
+		}
 		sb.WriteString(gradientChars[3])
 	}
-	sb.WriteString(restore + gray)
+	if !ColorDisabled {
+		sb.WriteString(restore + gray)
+	}
 	for i := 0; i < empty; i++ {
 		sb.WriteString(gradientChars[0])
 	}
-	sb.WriteString(restore)
+	if !ColorDisabled {
+		sb.WriteString(restore)
+	}
 	return sb.String()
 }
 
@@ -277,14 +297,20 @@ func getDotBar(pct int, color, gray, restore string) string {
 	empty := 10 - filled
 
 	var sb strings.Builder
-	sb.WriteString(color)
+	if !ColorDisabled {
+		sb.WriteString(color)
+	}
 	for i := 0; i < filled; i++ {
 		sb.WriteString("●")
 	}
-	sb.WriteString(restore + gray)
+	if !ColorDisabled {
+		sb.WriteString(restore + gray)
+	}
 	for i := 0; i < empty; i++ {
 		sb.WriteString("○")
 	}
-	sb.WriteString(restore)
+	if !ColorDisabled {
+		sb.WriteString(restore)
+	}
 	return sb.String()
 }

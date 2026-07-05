@@ -125,11 +125,16 @@ func (s *SparklineBuffer) Get() []int {
 func (s *SparklineBuffer) Render(style SparklineStyle, color, gray, reset string) string {
 	values := s.Get()
 	if len(values) == 0 {
+		if ColorDisabled {
+			return strings.Repeat(" ", sparklineWidth)
+		}
 		return gray + strings.Repeat(" ", sparklineWidth) + reset
 	}
 
 	var sb strings.Builder
-	sb.WriteString(color)
+	if !ColorDisabled {
+		sb.WriteString(color)
+	}
 
 	switch style {
 	case SparklineBlock:
@@ -161,7 +166,9 @@ func (s *SparklineBuffer) Render(style SparklineStyle, color, gray, reset string
 		}
 	}
 
-	sb.WriteString(reset)
+	if !ColorDisabled {
+		sb.WriteString(reset)
+	}
 	return sb.String()
 }
 
