@@ -105,53 +105,53 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 	return noASCII, minimal, outputFmt, logoMode, themeName, barStyleName, treeStyleName, sparklineEnabled, sparklineWidth, sparklineStyleName, liveEnabled, liveInterval
 }
 
-func parseBarStyle(name string) BarStyle {
+func parseBarStyle(name string) (BarStyle, bool) {
 	name = strings.ToLower(name)
 	switch name {
 	case "block":
-		return BarStyleBlock
+		return BarStyleBlock, true
 	case "braille":
-		return BarStyleBraille
+		return BarStyleBraille, true
 	case "gradient":
-		return BarStyleGradient
+		return BarStyleGradient, true
 	case "dot":
-		return BarStyleDot
+		return BarStyleDot, true
 	default:
-		return BarStyleBraille
+		return BarStyleBlock, false
 	}
 }
 
-func parseTreeStyle(name string) TreeStyle {
+func parseTreeStyle(name string) (TreeStyle, bool) {
 	name = strings.ToLower(name)
 	switch name {
 	case "default":
-		return TreeStyleDefault
+		return TreeStyleDefault, true
 	case "rounded":
-		return TreeStyleRounded
+		return TreeStyleRounded, true
 	case "heavy":
-		return TreeStyleHeavy
+		return TreeStyleHeavy, true
 	case "double":
-		return TreeStyleDouble
+		return TreeStyleDouble, true
 	case "ascii":
-		return TreeStyleASCII
+		return TreeStyleASCII, true
 	case "dotted":
-		return TreeStyleDotted
+		return TreeStyleDotted, true
 	default:
-		return TreeStyleDefault
+		return TreeStyleDefault, false
 	}
 }
 
-func parseSparklineStyle(name string) SparklineStyle {
+func parseSparklineStyle(name string) (SparklineStyle, bool) {
 	name = strings.ToLower(name)
 	switch name {
 	case "block":
-		return SparklineBlock
+		return SparklineBlock, true
 	case "braille":
-		return SparklineBraille
+		return SparklineBraille, true
 	case "dots":
-		return SparklineDots
+		return SparklineDots, true
 	default:
-		return SparklineBlock
+		return SparklineBlock, false
 	}
 }
 
@@ -876,6 +876,11 @@ func getPluginsDir() string {
 func main() {
 	noASCII, minimal, outputFmt, logoMode, themeName, barStyleName, treeStyleName, sparklineEnabled, sparklineWidth, sparklineStyleName, liveEnabled, liveInterval := parseFlags()
 
+	if logoMode != "" && logoMode != "simple" && logoMode != "banner" {
+		fmt.Fprintf(os.Stderr, "Unknown logo mode: %s\n", logoMode)
+		os.Exit(1)
+	}
+
 	if themeName != "" {
 		if !SetTheme(themeName) {
 			fmt.Fprintf(os.Stderr, "Unknown theme: %s\n", themeName)
@@ -884,17 +889,29 @@ func main() {
 	}
 
 	if barStyleName != "" {
-		style := parseBarStyle(barStyleName)
+		style, ok := parseBarStyle(barStyleName)
+		if !ok {
+			fmt.Fprintf(os.Stderr, "Unknown bar style: %s\n", barStyleName)
+			os.Exit(1)
+		}
 		SetBarStyle(style)
 	}
 
 	if treeStyleName != "" {
-		style := parseTreeStyle(treeStyleName)
+		style, ok := parseTreeStyle(treeStyleName)
+		if !ok {
+			fmt.Fprintf(os.Stderr, "Unknown tree style: %s\n", treeStyleName)
+			os.Exit(1)
+		}
 		SetTreeStyle(style)
 	}
 
 	if sparklineStyleName != "" {
-		style := parseSparklineStyle(sparklineStyleName)
+		style, ok := parseSparklineStyle(sparklineStyleName)
+		if !ok {
+			fmt.Fprintf(os.Stderr, "Unknown sparkline style: %s\n", sparklineStyleName)
+			os.Exit(1)
+		}
 		SetSparklineStyle(style)
 	}
 
