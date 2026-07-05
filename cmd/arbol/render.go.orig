@@ -54,8 +54,6 @@ func runeWidth(r rune) int {
 	return 1
 }
 
-// visualLength computes string length without ANSI sequences.
-// Optimization: Processes string in a single pass without allocating a stripped copy, and uses a fast path for common ASCII chars.
 func visualLength(s string) int {
 	length := 0
 	inEscape := false
@@ -156,8 +154,6 @@ func truncateANSI(s string, limit int) string {
 	return builder.String()
 }
 
-// stripANSI removes ANSI escape sequences from a string.
-// Optimization: Preallocates string builder to avoid repeated slice reallocations.
 func stripANSI(s string) string {
 	var builder strings.Builder
 	builder.Grow(len(s))
@@ -226,21 +222,15 @@ func getBlockBar(pct int, color, gray, restore string) string {
 	empty := 10 - filled
 
 	var sb strings.Builder
-	if !ColorDisabled {
-		sb.WriteString(color)
-	}
+	sb.WriteString(color)
 	for i := 0; i < filled; i++ {
 		sb.WriteString("█")
 	}
-	if !ColorDisabled {
-		sb.WriteString(restore + gray)
-	}
+	sb.WriteString(restore + gray)
 	for i := 0; i < empty; i++ {
 		sb.WriteString("░")
 	}
-	if !ColorDisabled {
-		sb.WriteString(restore)
-	}
+	sb.WriteString(restore)
 	return sb.String()
 }
 
@@ -265,28 +255,20 @@ func getBrailleBar(pct int, color, gray, restore string) string {
 	partialSegments := filledSegments % 8
 
 	var sb strings.Builder
-	if !ColorDisabled {
-		sb.WriteString(color)
-	}
+	sb.WriteString(color)
 	for i := 0; i < fullChars; i++ {
 		sb.WriteString("⠿")
 	}
 	if fullChars < 10 {
 		sb.WriteString(braillePatterns[partialSegments])
-		if !ColorDisabled {
-			sb.WriteString(restore + gray)
-		}
+		sb.WriteString(restore + gray)
 		for i := fullChars + 1; i < 10; i++ {
 			sb.WriteString("⠀")
 		}
 	} else {
-		if !ColorDisabled {
-			sb.WriteString(restore + gray)
-		}
+		sb.WriteString(restore + gray)
 	}
-	if !ColorDisabled {
-		sb.WriteString(restore)
-	}
+	sb.WriteString(restore)
 	return sb.String()
 }
 
@@ -312,20 +294,14 @@ func getGradientBar(pct int, restore, gray string) string {
 		if colorIdx > 3 {
 			colorIdx = 3
 		}
-		if !ColorDisabled {
-			sb.WriteString(gradientColors[colorIdx])
-		}
+		sb.WriteString(gradientColors[colorIdx])
 		sb.WriteString(gradientChars[3])
 	}
-	if !ColorDisabled {
-		sb.WriteString(restore + gray)
-	}
+	sb.WriteString(restore + gray)
 	for i := 0; i < empty; i++ {
 		sb.WriteString(gradientChars[0])
 	}
-	if !ColorDisabled {
-		sb.WriteString(restore)
-	}
+	sb.WriteString(restore)
 	return sb.String()
 }
 
@@ -337,20 +313,14 @@ func getDotBar(pct int, color, gray, restore string) string {
 	empty := 10 - filled
 
 	var sb strings.Builder
-	if !ColorDisabled {
-		sb.WriteString(color)
-	}
+	sb.WriteString(color)
 	for i := 0; i < filled; i++ {
 		sb.WriteString("●")
 	}
-	if !ColorDisabled {
-		sb.WriteString(restore + gray)
-	}
+	sb.WriteString(restore + gray)
 	for i := 0; i < empty; i++ {
 		sb.WriteString("○")
 	}
-	if !ColorDisabled {
-		sb.WriteString(restore)
-	}
+	sb.WriteString(restore)
 	return sb.String()
 }
