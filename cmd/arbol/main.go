@@ -97,8 +97,8 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 			fmt.Println("  --live[=MS] enables live updating mode (default interval: 1000ms)")
 			os.Exit(0)
 		} else {
-			fmt.Fprintf(os.Stderr, "Unknown flag: %s\n", arg)
-			fmt.Printf("Usage: %s [--no-ascii] [--minimal] [--noframe] [--logo=simple|banner] [--output=json|xml|txt]\n", os.Args[0])
+			fmt.Fprintf(os.Stderr, "Error: unknown flag '%s'\n", arg)
+			fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 			os.Exit(1)
 		}
 	}
@@ -168,7 +168,7 @@ func gatherInfo(pluginsDir string) SystemInfo {
 	wg.Add(14)
 	go func() { defer wg.Done(); hostname, _ = os.Hostname() }()
 	go func() { defer wg.Done(); osName = getOSName() }()
-	go func() { defer wg.Done(); kernel = runCommand("uname", "-r") }()
+	go func() { defer wg.Done(); kernel = getKernel() }()
 	go func() { defer wg.Done(); uptimeVal = getUptime() }()
 	go func() { defer wg.Done(); cpuVal = getCPU() }()
 	go func() { defer wg.Done(); gpuVal = getGPU() }()
@@ -573,7 +573,8 @@ func renderOutput(noASCII, minimal bool, outputFmt string, infoObj SystemInfo, e
 			printTXT(infoObj)
 			os.Exit(0)
 		default:
-			fmt.Fprintf(os.Stderr, "Unknown output format: %s\n", outputFmt)
+			fmt.Fprintf(os.Stderr, "Error: unknown output format '%s'\n", outputFmt)
+			fmt.Fprintf(os.Stderr, "Supported formats: json, xml, txt\n")
 			os.Exit(1)
 		}
 	}
@@ -883,7 +884,8 @@ func main() {
 
 	if themeName != "" {
 		if !SetTheme(themeName) {
-			fmt.Fprintf(os.Stderr, "Unknown theme: %s\n", themeName)
+			fmt.Fprintf(os.Stderr, "Error: unknown theme '%s'\n", themeName)
+			fmt.Fprintf(os.Stderr, "Run '%s --help' for a list of available themes.\n", os.Args[0])
 			os.Exit(1)
 		}
 	}
