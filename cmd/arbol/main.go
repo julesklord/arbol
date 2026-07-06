@@ -168,7 +168,7 @@ func gatherInfo(pluginsDir string) SystemInfo {
 	wg.Add(14)
 	go func() { defer wg.Done(); hostname, _ = os.Hostname() }()
 	go func() { defer wg.Done(); osName = getOSName() }()
-	go func() { defer wg.Done(); kernel = runCommand("uname", "-r") }()
+	go func() { defer wg.Done(); kernel = getKernel() }()
 	go func() { defer wg.Done(); uptimeVal = getUptime() }()
 	go func() { defer wg.Done(); cpuVal = getCPU() }()
 	go func() { defer wg.Done(); gpuVal = getGPU() }()
