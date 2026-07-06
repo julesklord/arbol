@@ -197,14 +197,15 @@ func getBar(pct int) string {
 		pct = 100
 	}
 
-	color := "\033[01;32m" // Green
+	theme := GetTheme()
+	color := theme.BarColors[0]
 	if pct > 80 {
-		color = "\033[01;31m" // Red
+		color = theme.BarColors[2]
 	} else if pct > 50 {
-		color = "\033[01;33m" // Yellow
+		color = theme.BarColors[1]
 	}
 	restore := "\033[0m"
-	gray := "\033[00;37m"
+	gray := theme.Muted
 
 	switch currentBarStyle {
 	case BarStyleBraille:

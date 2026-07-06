@@ -20,3 +20,7 @@
 ## 2024-12-06 - Error Message Clarity
 **Learning:** Command-line tools should return actionable and friendly error messages rather than terse generic errors. Suggesting using `--help` immediately directs the user to the correct next step.
 **Action:** When updating or reviewing CLI argument parsers, always ensure error messages not only describe the problem but also provide the user with clear instructions on how to find the supported options or correct their mistake.
+
+## 2024-07-06 - Change bar colors to theme colors
+**Learning:** Hardcoding standard ANSI colors for progress bars (green/yellow/red) breaks the visual coherence of customized color themes. A UI component should inherit its semantic colors (success/warning/error) from the active theme palette rather than using fixed ANSI escape codes to ensure a consistent look and feel across different themes.
+**Action:** Replace hardcoded ANSI colors (\033[01;32m etc) with dynamic lookups from the active theme configuration (theme.BarColors[0], theme.Muted, etc) for UI components like progress bars.
