@@ -13,6 +13,10 @@
 **Learning:** Adding NO_COLOR support is an important accessibility improvement for users with visual sensitivities, colorblindness, or low-contrast requirements, providing them with a way to easily disable ANSI colors.
 **Action:** Always implement a `ColorDisabled` mechanism tied to the `NO_COLOR` standard environment variable, modifying rendering functions to strip or omit ANSI color codes based on this flag.
 
+## 2024-07-05 - Validate CLI Flags and Exit Early on Errors
+**Learning:** In CLI applications, silently ignoring unknown flag values and falling back to defaults can be confusing for users. When provided with invalid configurations, providing immediate error feedback is a core UX improvement.
+**Action:** When creating CLI apps, validate flag values like themes and styles directly after parsing. If invalid, output a clear error message to `stderr` and exit with a non-zero status code rather than silently failing to a default.
+
 ## 2024-12-06 - Error Message Clarity
 **Learning:** Command-line tools should return actionable and friendly error messages rather than terse generic errors. Suggesting using `--help` immediately directs the user to the correct next step.
 **Action:** When updating or reviewing CLI argument parsers, always ensure error messages not only describe the problem but also provide the user with clear instructions on how to find the supported options or correct their mistake.
