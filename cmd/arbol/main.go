@@ -84,6 +84,10 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 					liveInterval = ms
 				}
 			}
+		} else if arg == "--output" || arg == "--logo" || arg == "--theme" || arg == "--bar-style" || arg == "--tree-style" || arg == "--sparkline-style" {
+			fmt.Fprintf(os.Stderr, "Error: flag '%s' requires a value (e.g., %s=VALUE)\n", arg, arg)
+			fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+			os.Exit(1)
 		} else if arg == "--version" || arg == "-v" {
 			fmt.Println("arbol version", version)
 			os.Exit(0)
