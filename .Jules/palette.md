@@ -28,3 +28,6 @@
 ## 2024-07-06 - Error Message Actionability
 **Learning:** Terse CLI error messages like 'Unknown logo mode: foo' are confusing and require the user to guess next steps. Error messages should point to the solution.
 **Action:** Update error message text to provide clear steps to resolve the issue (e.g., suggesting '--help').
+## 2026-07-07 - Clear Errors for Explicit CLI Flags
+**Learning:** Silent fallbacks for invalid explicit CLI flags confuse users.
+**Action:** Always validate explicit flag values and provide actionable error messages (e.g., suggesting --help).
