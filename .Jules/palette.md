@@ -20,3 +20,6 @@
 ## 2024-12-06 - Error Message Clarity
 **Learning:** Command-line tools should return actionable and friendly error messages rather than terse generic errors. Suggesting using `--help` immediately directs the user to the correct next step.
 **Action:** When updating or reviewing CLI argument parsers, always ensure error messages not only describe the problem but also provide the user with clear instructions on how to find the supported options or correct their mistake.
+## 2024-07-06 - Error Message Actionability
+**Learning:** Terse CLI error messages like 'Unknown logo mode: foo' are confusing and require the user to guess next steps. Error messages should point to the solution.
+**Action:** Update error message text to provide clear steps to resolve the issue (e.g., suggesting '--help').
