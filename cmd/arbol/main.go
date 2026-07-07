@@ -878,7 +878,8 @@ func main() {
 	noASCII, minimal, outputFmt, logoMode, themeName, barStyleName, treeStyleName, sparklineEnabled, sparklineWidth, sparklineStyleName, liveEnabled, liveInterval := parseFlags()
 
 	if logoMode != "" && logoMode != "simple" && logoMode != "banner" {
-		fmt.Fprintf(os.Stderr, "Unknown logo mode: %s\n", logoMode)
+		fmt.Fprintf(os.Stderr, "Error: unknown logo mode '%s'\n", logoMode)
+		fmt.Fprintf(os.Stderr, "Run '%s --help' for a list of available logo modes.\n", os.Args[0])
 		os.Exit(1)
 	}
 
@@ -893,7 +894,8 @@ func main() {
 	if barStyleName != "" {
 		style, ok := parseBarStyle(barStyleName)
 		if !ok {
-			fmt.Fprintf(os.Stderr, "Unknown bar style: %s\n", barStyleName)
+			fmt.Fprintf(os.Stderr, "Error: unknown bar style '%s'\n", barStyleName)
+			fmt.Fprintf(os.Stderr, "Run '%s --help' for a list of available bar styles.\n", os.Args[0])
 			os.Exit(1)
 		}
 		SetBarStyle(style)
@@ -902,7 +904,8 @@ func main() {
 	if treeStyleName != "" {
 		style, ok := parseTreeStyle(treeStyleName)
 		if !ok {
-			fmt.Fprintf(os.Stderr, "Unknown tree style: %s\n", treeStyleName)
+			fmt.Fprintf(os.Stderr, "Error: unknown tree style '%s'\n", treeStyleName)
+			fmt.Fprintf(os.Stderr, "Run '%s --help' for a list of available tree styles.\n", os.Args[0])
 			os.Exit(1)
 		}
 		SetTreeStyle(style)
@@ -911,7 +914,8 @@ func main() {
 	if sparklineStyleName != "" {
 		style, ok := parseSparklineStyle(sparklineStyleName)
 		if !ok {
-			fmt.Fprintf(os.Stderr, "Unknown sparkline style: %s\n", sparklineStyleName)
+			fmt.Fprintf(os.Stderr, "Error: unknown sparkline style '%s'\n", sparklineStyleName)
+			fmt.Fprintf(os.Stderr, "Run '%s --help' for a list of available sparkline styles.\n", os.Args[0])
 			os.Exit(1)
 		}
 		SetSparklineStyle(style)
