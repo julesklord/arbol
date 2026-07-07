@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -206,6 +207,33 @@ func getMemory() string {
 }
 
 func getDisk() string {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs("/", &stat); err == nil {
+		total := stat.Blocks
+		free := stat.Bavail
+		if total > 0 {
+			used := total - free
+			pct := (used * 100) / total
+			fsName := ""
+			if runtime.GOOS == "linux" {
+				if file, err := os.Open("/proc/mounts"); err == nil {
+					defer file.Close()
+					scanner := bufio.NewScanner(file)
+					for scanner.Scan() {
+						fields := strings.Fields(scanner.Text())
+						if len(fields) >= 2 && fields[1] == "/" {
+							fsName = fields[0]
+							break
+						}
+					}
+				}
+			}
+			if fsName != "" {
+				return fmt.Sprintf("%s (%d%%)", fsName, pct)
+			}
+		}
+	}
+
 	out := runCommandWithTimeout(2*time.Second, "df", "-Ph", "/")
 	if out != "" {
 		lines := strings.Split(out, "\n")
