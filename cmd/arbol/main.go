@@ -70,6 +70,10 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 				val := strings.TrimPrefix(arg, "--sparkline=")
 				if w, err := strconv.Atoi(val); err == nil && w > 0 {
 					sparklineWidth = w
+				} else {
+					fmt.Fprintf(os.Stderr, "Error: invalid width for --sparkline='%s', must be a positive integer\n", val)
+					fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+					os.Exit(1)
 				}
 			}
 		} else if strings.HasPrefix(arg, "--sparkline-style=") {
@@ -82,6 +86,10 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 				val := strings.TrimPrefix(arg, "--live=")
 				if ms, err := strconv.Atoi(val); err == nil && ms > 0 {
 					liveInterval = ms
+				} else {
+					fmt.Fprintf(os.Stderr, "Error: invalid interval for --live='%s', must be a positive integer in milliseconds\n", val)
+					fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+					os.Exit(1)
 				}
 			}
 		} else if arg == "--version" || arg == "-v" {
