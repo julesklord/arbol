@@ -1,6 +1,8 @@
 package main
 
 import (
+	"syscall"
+
 	"bufio"
 	"fmt"
 	"os"
@@ -24,15 +26,15 @@ type SparklineBuffer struct {
 // Each braille char = 2x4 dots, giving us 8 vertical levels
 // Using bottom-to-top: ⠁⠂⠄⡀⢀⠠⠐⠈ (but we want filled bottom)
 var sparklineChars = []string{
-	" ",  // 0 - empty
-	"▁",  // 1 - bottom 1/8
-	"▂",  // 2 - bottom 2/8
-	"▃",  // 3 - bottom 3/8
-	"▄",  // 4 - bottom 4/8
-	"▅",  // 5 - bottom 5/8
-	"▆",  // 6 - bottom 6/8
-	"▇",  // 7 - bottom 7/8
-	"█",  // 8 - full
+	" ", // 0 - empty
+	"▁", // 1 - bottom 1/8
+	"▂", // 2 - bottom 2/8
+	"▃", // 3 - bottom 3/8
+	"▄", // 4 - bottom 4/8
+	"▅", // 5 - bottom 5/8
+	"▆", // 6 - bottom 6/8
+	"▇", // 7 - bottom 7/8
+	"█", // 8 - full
 }
 
 // Braille sparkline (higher resolution, 2x4 dots per char)
@@ -309,6 +311,16 @@ func collectSwapPercent() int {
 }
 
 func collectDiskPercent() int {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs("/", &stat); err == nil {
+		total := stat.Blocks
+		free := stat.Bavail
+		if total > 0 {
+			used := total - free
+			return int((used * 100) / total)
+		}
+	}
+
 	out := runCommand("df", "-Ph", "/")
 	if out != "" {
 		lines := strings.Split(out, "\n")
