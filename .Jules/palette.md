@@ -31,3 +31,7 @@
 ## 2024-05-24 - Actionable CLI Flag Errors
 **Learning:** When manually parsing flags with strings.HasPrefix, missing values often fall through to generic "unknown flag" errors.
 **Action:** Always validate exact string matches for keys that expect values to provide actionable error messages.
+
+## 2026-07-07 - Clear Errors for Explicit CLI Flags
+**Learning:** Silent fallbacks for invalid explicit CLI flags confuse users.
+**Action:** Always validate explicit flag values and provide actionable error messages (e.g., suggesting --help).
