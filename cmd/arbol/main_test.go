@@ -170,3 +170,35 @@ func TestGetBar(t *testing.T) {
 		})
 	}
 }
+
+func TestParseTreeStyle(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		wantStyle TreeStyle
+		wantOk    bool
+	}{
+		{"default style", "default", TreeStyleDefault, true},
+		{"rounded style", "rounded", TreeStyleRounded, true},
+		{"heavy style", "heavy", TreeStyleHeavy, true},
+		{"double style", "double", TreeStyleDouble, true},
+		{"ascii style", "ascii", TreeStyleASCII, true},
+		{"dotted style", "dotted", TreeStyleDotted, true},
+		{"uppercase input", "ROUNDED", TreeStyleRounded, true},
+		{"mixed case input", "HeAvY", TreeStyleHeavy, true},
+		{"invalid style", "invalid_style", TreeStyleDefault, false},
+		{"empty string", "", TreeStyleDefault, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotStyle, gotOk := parseTreeStyle(tt.input)
+			if gotStyle != tt.wantStyle {
+				t.Errorf("parseTreeStyle(%q) style = %v, want %v", tt.input, gotStyle, tt.wantStyle)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("parseTreeStyle(%q) ok = %v, want %v", tt.input, gotOk, tt.wantOk)
+			}
+		})
+	}
+}
