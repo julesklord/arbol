@@ -170,3 +170,30 @@ func TestGetBar(t *testing.T) {
 		})
 	}
 }
+
+func TestParseBarStyle(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		want     BarStyle
+		wantBool bool
+	}{
+		{"block lowercase", "block", BarStyleBlock, true},
+		{"block uppercase", "BLOCK", BarStyleBlock, true},
+		{"braille mixed case", "bRaIlLe", BarStyleBraille, true},
+		{"gradient", "gradient", BarStyleGradient, true},
+		{"dot", "dot", BarStyleDot, true},
+		{"empty string", "", BarStyleBlock, false},
+		{"unknown style", "unknown", BarStyleBlock, false},
+		{"whitespace", " ", BarStyleBlock, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, gotBool := parseBarStyle(tt.input)
+			if got != tt.want || gotBool != tt.wantBool {
+				t.Errorf("parseBarStyle(%q) = (%v, %v); want (%v, %v)", tt.input, got, gotBool, tt.want, tt.wantBool)
+			}
+		})
+	}
+}
