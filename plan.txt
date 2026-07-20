@@ -1,0 +1,14 @@
+1. Read the `formatPluginName` function in `cmd/arbol/main.go` and understand its logic.
+2. In `cmd/arbol/main_test.go`, add a new test function `TestFormatPluginName`.
+3. In `TestFormatPluginName`, implement table-driven tests. Include these test cases:
+   - Normal case with extension: `"battery.sh"` -> `"Battery"`
+   - Normal case without extension: `"memory"` -> `"Memory"`
+   - Underscore separation: `"cpu_usage.sh"` -> `"Cpu Usage"`
+   - Multiple underscores: `"some_long_plugin_name"` -> `"Some Long Plugin Name"`
+   - Mixed cases: `"Battery_percent.sh"` -> `"Battery Percent"`
+   - Consecutive underscores: `"plugin__name.sh"` -> `"Plugin  Name"` (Note the double space resulting from the split logic)
+   - Leading/trailing underscores: `"_plugin.sh"` -> `" Plugin"`, `"plugin_.sh"` -> `"Plugin "`
+   - Empty string: `""` -> `""`
+   - Only extension: `".sh"` -> `""`
+4. Run tests with `go test -v ./...` to verify the logic.
+5. Provide pre-commit instructions for testing, verification, review, and reflection.
