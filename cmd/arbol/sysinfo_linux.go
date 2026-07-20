@@ -40,3 +40,19 @@ func getKernel() string {
 	}
 	return "n/a"
 }
+
+func getSysinfoUptime() (int64, error) {
+	var info syscall.Sysinfo_t
+	if err := syscall.Sysinfo(&info); err == nil {
+		return int64(info.Uptime), nil
+	}
+	return 0, syscall.ENOSYS
+}
+
+func getSysinfoSwap() (uint64, uint64, error) {
+	var info syscall.Sysinfo_t
+	if err := syscall.Sysinfo(&info); err == nil {
+		return uint64(info.Totalswap) * uint64(info.Unit), uint64(info.Freeswap) * uint64(info.Unit), nil
+	}
+	return 0, 0, syscall.ENOSYS
+}

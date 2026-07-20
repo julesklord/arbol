@@ -3,6 +3,7 @@
 package main
 
 import (
+	"errors"
 	"strings"
 )
 
@@ -20,4 +21,13 @@ func getKernel() string {
 		return strings.TrimSpace(out)
 	}
 	return "n/a"
+}
+
+
+func getSysinfoUptime() (int64, error) {
+	return 0, errors.New("not supported")
+}
+
+func getSysinfoSwap() (uint64, uint64, error) {
+	return 0, 0, errors.New("not supported")
 }
