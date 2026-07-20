@@ -323,7 +323,8 @@ func collectDiskPercent() int {
 
 	out := runCommand("df", "-Ph", "/")
 	if out != "" {
-		lines := strings.Split(out, "\n")
+		// Optimize memory by limiting split to 3 items since we only need the 2nd line
+		lines := strings.SplitN(out, "\n", 3)
 		if len(lines) >= 2 {
 			fields := strings.Fields(lines[1])
 			if len(fields) >= 5 {
