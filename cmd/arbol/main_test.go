@@ -170,3 +170,106 @@ func TestGetBar(t *testing.T) {
 		})
 	}
 }
+
+
+
+func TestGetBrailleBar(t *testing.T) {
+	// Temporarily force ColorDisabled to false for testing ANSI codes
+	origColorDisabled := ColorDisabled
+	ColorDisabled = false
+	defer func() { ColorDisabled = origColorDisabled }()
+
+	tests := []struct {
+		name    string
+		pct     int
+		color   string
+		gray    string
+		restore string
+		want    string
+	}{
+		{
+			name:    "0 percent",
+			pct:     0,
+			color:   "\033[31m",
+			gray:    "\033[90m",
+			restore: "\033[0m",
+			want:    "\033[31m⠀\033[0m\033[90m⠀⠀⠀⠀⠀⠀⠀⠀⠀\033[0m",
+		},
+		{
+			name:    "5 percent (4 segments)",
+			pct:     5, // 4 segments -> ⠏
+			color:   "\033[31m",
+			gray:    "\033[90m",
+			restore: "\033[0m",
+			want:    "\033[31m⠏\033[0m\033[90m⠀⠀⠀⠀⠀⠀⠀⠀⠀\033[0m",
+		},
+		{
+			name:    "12 percent (9 segments)",
+			pct:     12, // 9 segments -> ⠿⠁
+			color:   "\033[31m",
+			gray:    "\033[90m",
+			restore: "\033[0m",
+			want:    "\033[31m⠿⠁\033[0m\033[90m⠀⠀⠀⠀⠀⠀⠀⠀\033[0m",
+		},
+		{
+			name:    "50 percent (40 segments)",
+			pct:     50, // 40 segments -> 5 full chars
+			color:   "\033[31m",
+			gray:    "\033[90m",
+			restore: "\033[0m",
+			want:    "\033[31m⠿⠿⠿⠿⠿⠀\033[0m\033[90m⠀⠀⠀⠀\033[0m",
+		},
+		{
+			name:    "95 percent (76 segments)",
+			pct:     95, // 76 segments -> 9 full chars, 1 partial (⠏)
+			color:   "\033[31m",
+			gray:    "\033[90m",
+			restore: "\033[0m",
+			want:    "\033[31m⠿⠿⠿⠿⠿⠿⠿⠿⠿⠏\033[0m\033[90m\033[0m",
+		},
+		{
+			name:    "100 percent (80 segments)",
+			pct:     100, // 80 segments -> 10 full chars
+			color:   "\033[31m",
+			gray:    "\033[90m",
+			restore: "\033[0m",
+			want:    "\033[31m⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿\033[0m\033[90m\033[0m",
+		},
+		{
+			name:    "> 100 percent (150%)",
+			pct:     150, // Clamping is handled in getBar(), so getBrailleBar prints 15 full chars
+			color:   "\033[31m",
+			gray:    "\033[90m",
+			restore: "\033[0m",
+			want:    "\033[31m⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿⠿\033[0m\033[90m\033[0m",
+		},
+		{
+			name:    "< 0 percent (-10%)",
+			pct:     -10, // Clamping is handled in getBar(), so getBrailleBar handles negative mathematically
+			color:   "\033[31m",
+			gray:    "\033[90m",
+			restore: "\033[0m",
+			want:    "\033[31m⠀\033[0m\033[90m⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\033[0m", // Note the extra space since fullChars = -1
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getBrailleBar(tt.pct, tt.color, tt.gray, tt.restore)
+			if got != tt.want {
+				t.Errorf("getBrailleBar(%d) = %q; want %q", tt.pct, got, tt.want)
+			}
+		})
+	}
+
+	// Test with ColorDisabled = true
+	t.Run("Color disabled", func(t *testing.T) {
+		ColorDisabled = true
+		got := getBrailleBar(50, "\033[31m", "\033[90m", "\033[0m")
+		want := "⠿⠿⠿⠿⠿⠀⠀⠀⠀⠀"
+		if got != want {
+			t.Errorf("getBrailleBar(50, colors...) with ColorDisabled = true = %q; want %q", got, want)
+		}
+		ColorDisabled = false // restore for other tests
+	})
+}
