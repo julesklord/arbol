@@ -170,3 +170,31 @@ func TestGetBar(t *testing.T) {
 		})
 	}
 }
+
+func TestFormatPluginName(t *testing.T) {
+	tests := []struct {
+		name     string
+		filename string
+		want     string
+	}{
+		{"Normal case with extension", "battery.sh", "Battery"},
+		{"Normal case without extension", "memory", "Memory"},
+		{"Underscore separation", "cpu_usage.sh", "Cpu Usage"},
+		{"Multiple underscores", "my_cool_plugin.py", "My Cool Plugin"},
+		{"Consecutive underscores", "plugin__name.sh", "Plugin  Name"},
+		{"Leading underscore", "_plugin.sh", " Plugin"},
+		{"Trailing underscore", "plugin_.sh", "Plugin "},
+		{"Empty string", "", ""},
+		{"Only extension", ".sh", ""},
+		{"Uppercase plugin", "UPPERCASE_PLUGIN.sh", "UPPERCASE PLUGIN"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := formatPluginName(tt.filename)
+			if got != tt.want {
+				t.Errorf("formatPluginName(%q) = %q; want %q", tt.filename, got, tt.want)
+			}
+		})
+	}
+}
