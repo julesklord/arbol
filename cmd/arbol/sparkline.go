@@ -287,19 +287,7 @@ func collectMemPercent() int {
 
 func collectSwapPercent() int {
 	if runtime.GOOS == "linux" {
-		file, err := os.Open("/proc/meminfo")
-		if err == nil {
-			defer file.Close()
-			scanner := bufio.NewScanner(file)
-			var total, free int64
-			for scanner.Scan() {
-				line := scanner.Text()
-				if strings.HasPrefix(line, "SwapTotal:") {
-					fmt.Sscanf(line, "SwapTotal: %d kB", &total)
-				} else if strings.HasPrefix(line, "SwapFree:") {
-					fmt.Sscanf(line, "SwapFree: %d kB", &free)
-				}
-			}
+		if total, free, err := getSysinfoSwap(); err == nil {
 			if total > 0 {
 				used := total - free
 				pct := used * 100 / total

@@ -81,16 +81,10 @@ func getDistroID() string {
 
 func getUptime() string {
 	if runtime.GOOS == "linux" {
-		data, err := os.ReadFile("/proc/uptime")
-		if err == nil {
-			parts := strings.Fields(string(data))
-			if len(parts) > 0 {
-				if sec, err := strconv.ParseFloat(parts[0], 64); err == nil {
-					h := int(sec) / 3600
-					m := (int(sec) % 3600) / 60
-					return fmt.Sprintf("%dh %dm", h, m)
-				}
-			}
+		if uptime, err := getSysinfoUptime(); err == nil {
+			h := uptime / 3600
+			m := (uptime % 3600) / 60
+			return fmt.Sprintf("%dh %dm", h, m)
 		}
 	} else if runtime.GOOS == "darwin" {
 		out := runCommand("sysctl", "-n", "kern.boottime")
@@ -306,23 +300,11 @@ func getTerminal() string {
 
 func getSwap() string {
 	if runtime.GOOS == "linux" {
-		file, err := os.Open("/proc/meminfo")
-		if err == nil {
-			defer file.Close()
-			scanner := bufio.NewScanner(file)
-			var total, free int64
-			for scanner.Scan() {
-				line := scanner.Text()
-				if strings.HasPrefix(line, "SwapTotal:") {
-					fmt.Sscanf(line, "SwapTotal: %d kB", &total)
-				} else if strings.HasPrefix(line, "SwapFree:") {
-					fmt.Sscanf(line, "SwapFree: %d kB", &free)
-				}
-			}
+		if total, free, err := getSysinfoSwap(); err == nil {
 			if total > 0 {
 				used := total - free
 				pct := used * 100 / total
-				return fmt.Sprintf("%d%% (%dMB / %dMB)", pct, used/1024, total/1024)
+				return fmt.Sprintf("%d%% (%dMB / %dMB)", pct, used/(1024*1024), total/(1024*1024))
 			}
 		}
 	} else if runtime.GOOS == "darwin" {
