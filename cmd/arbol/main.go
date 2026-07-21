@@ -54,20 +54,50 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 			// no-op: kept for backwards compatibility
 		} else if strings.HasPrefix(arg, "--output=") {
 			outputFmt = strings.TrimPrefix(arg, "--output=")
+			if outputFmt == "" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--output=' requires a value\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
 		} else if strings.HasPrefix(arg, "--logo=") {
 			logoMode = strings.TrimPrefix(arg, "--logo=")
+			if logoMode == "" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--logo=' requires a value\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
 		} else if strings.HasPrefix(arg, "--theme=") {
 			themeName = strings.TrimPrefix(arg, "--theme=")
+			if themeName == "" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--theme=' requires a value\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
 		} else if strings.HasPrefix(arg, "--bar-style=") {
 			barStyleName = strings.TrimPrefix(arg, "--bar-style=")
+			if barStyleName == "" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--bar-style=' requires a value\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
 		} else if strings.HasPrefix(arg, "--tree-style=") {
 			treeStyleName = strings.TrimPrefix(arg, "--tree-style=")
+			if treeStyleName == "" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--tree-style=' requires a value\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
 		} else if strings.HasPrefix(arg, "--sparkline") {
 			if arg == "--sparkline" {
 				sparklineEnabled = true
 			} else if strings.HasPrefix(arg, "--sparkline=") {
 				sparklineEnabled = true
 				val := strings.TrimPrefix(arg, "--sparkline=")
+				if val == "" {
+					fmt.Fprintf(os.Stderr, "Error: flag '--sparkline=' requires a positive integer value\n")
+					fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+					os.Exit(1)
+				}
 				if w, err := strconv.Atoi(val); err == nil && w > 0 {
 					sparklineWidth = w
 				} else {
@@ -78,12 +108,34 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 			}
 		} else if strings.HasPrefix(arg, "--sparkline-style=") {
 			sparklineStyleName = strings.TrimPrefix(arg, "--sparkline-style=")
+			if sparklineStyleName == "" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--sparkline-style=' requires a value\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
+		} else if strings.HasPrefix(arg, "--plugins-dir=") {
+			val := strings.TrimPrefix(arg, "--plugins-dir=")
+			if val == "" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--plugins-dir=' requires a value\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
+			os.Setenv("ARBOL_PLUGINS_DIR", val)
+		} else if arg == "--plugins-dir" {
+			fmt.Fprintf(os.Stderr, "Error: flag '--plugins-dir' requires a value (e.g., --plugins-dir=VALUE)\n")
+			fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+			os.Exit(1)
 		} else if strings.HasPrefix(arg, "--live") {
 			liveEnabled = true
 			if arg == "--live" {
 				liveInterval = 1000
 			} else if strings.HasPrefix(arg, "--live=") {
 				val := strings.TrimPrefix(arg, "--live=")
+				if val == "" {
+					fmt.Fprintf(os.Stderr, "Error: flag '--live=' requires a positive integer value\n")
+					fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+					os.Exit(1)
+				}
 				if ms, err := strconv.Atoi(val); err == nil && ms > 0 {
 					liveInterval = ms
 				} else {
