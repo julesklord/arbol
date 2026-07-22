@@ -175,17 +175,32 @@ func getMemory() string {
 		totalBytes, _ := strconv.ParseInt(totalBytesStr, 10, 64)
 		totalMB := totalBytes / 1024 / 1024
 
-		pageSizeStr := runCommand("bash", "-c", "vm_stat | awk '/page size of/ {print $8}' | tr -d '.'")
-		pageSize, _ := strconv.ParseInt(pageSizeStr, 10, 64)
-		if pageSize == 0 {
-			pageSize = 4096
+		// OPTIMIZATION: Consolidate multiple subprocesses into a single native call
+		vmStat := runCommand("vm_stat")
+		var pageSize, freePages, inactivePages int64
+		pageSize = 4096 // default
+		lines := strings.Split(vmStat, "\n")
+		for _, line := range lines {
+			if strings.Contains(line, "page size of") {
+				fields := strings.Fields(line)
+				if len(fields) >= 8 {
+					val := strings.TrimRight(fields[7], ".")
+					pageSize, _ = strconv.ParseInt(val, 10, 64)
+				}
+			} else if strings.HasPrefix(line, "Pages free:") {
+				fields := strings.Fields(line)
+				if len(fields) >= 3 {
+					val := strings.TrimRight(fields[2], ".")
+					freePages, _ = strconv.ParseInt(val, 10, 64)
+				}
+			} else if strings.HasPrefix(line, "Pages inactive:") {
+				fields := strings.Fields(line)
+				if len(fields) >= 3 {
+					val := strings.TrimRight(fields[2], ".")
+					inactivePages, _ = strconv.ParseInt(val, 10, 64)
+				}
+			}
 		}
-
-		freePagesStr := runCommand("bash", "-c", "vm_stat | awk '/Pages free:/ {print $3}' | tr -d '.'")
-		freePages, _ := strconv.ParseInt(freePagesStr, 10, 64)
-
-		inactivePagesStr := runCommand("bash", "-c", "vm_stat | awk '/Pages inactive:/ {print $3}' | tr -d '.'")
-		inactivePages, _ := strconv.ParseInt(inactivePagesStr, 10, 64)
 
 		if freePages > 0 && totalMB > 0 {
 			freeMB := (freePages + inactivePages) * pageSize / 1024 / 1024
@@ -243,29 +258,46 @@ func getDisk() string {
 
 func getGPU() string {
 	if runtime.GOOS == "darwin" {
-		out := runCommandWithTimeout(2*time.Second, "bash", "-c", "system_profiler SPDisplaysDataType | grep 'Chipset Model'")
+		// OPTIMIZATION: Avoid shelling out to bash for system_profiler
+		out := runCommandWithTimeout(2*time.Second, "system_profiler", "SPDisplaysDataType")
 		if out != "" {
-			parts := strings.Split(out, ":")
-			if len(parts) >= 2 {
-				return strings.TrimSpace(parts[1])
+			lines := strings.Split(out, "\n")
+			for _, line := range lines {
+				if strings.Contains(line, "Chipset Model:") {
+					parts := strings.Split(line, ":")
+					if len(parts) >= 2 {
+						return strings.TrimSpace(parts[1])
+					}
+				}
 			}
 		}
 	} else if runtime.GOOS == "linux" {
-		out := runCommandWithTimeout(2*time.Second, "bash", "-c", "lspci | grep -i 'vga\\|3d\\|display'")
+		// OPTIMIZATION: Avoid shelling out to bash for lspci
+		out := runCommandWithTimeout(2*time.Second, "lspci")
 		if out != "" {
 			lines := strings.Split(out, "\n")
-			line := lines[0]
-			if idx := strings.Index(line, "controller:"); idx != -1 {
-				line = line[idx+11:]
-			} else if idx := strings.Index(line, "VGA compatible controller: "); idx != -1 {
-				line = line[idx+27:]
-			} else if idx := strings.Index(line, "3D controller: "); idx != -1 {
-				line = line[idx+15:]
+			for _, line := range lines {
+				lower := strings.ToLower(line)
+				if strings.Contains(lower, "vga") || strings.Contains(lower, "3d") || strings.Contains(lower, "display") {
+					if idx := strings.Index(line, "controller:"); idx != -1 {
+						line = line[idx+11:]
+					} else if idx := strings.Index(line, "VGA compatible controller: "); idx != -1 {
+						line = line[idx+27:]
+					} else if idx := strings.Index(line, "3D controller: "); idx != -1 {
+						line = line[idx+15:]
+					} else {
+						// Fallback if the expected string isn't perfectly formatted
+						parts := strings.SplitN(line, ": ", 2)
+						if len(parts) >= 2 {
+							line = parts[1]
+						}
+					}
+					if idx := strings.Index(line, " (rev "); idx != -1 {
+						line = line[:idx]
+					}
+					return strings.TrimSpace(line)
+				}
 			}
-			if idx := strings.Index(line, " (rev "); idx != -1 {
-				line = line[:idx]
-			}
-			return strings.TrimSpace(line)
 		}
 	}
 	return "n/a"
@@ -369,17 +401,27 @@ func getCPUUsage() string {
 			return fmt.Sprintf("%d%%", pct)
 		}
 	} else if runtime.GOOS == "darwin" {
-		out := runCommand("bash", "-c", "ps -A -o %cpu | awk '{s+=$1} END {print s}'")
+		// OPTIMIZATION: Avoid shelling out to bash and awk for summing values
+		out := runCommand("ps", "-A", "-o", "%cpu")
 		if out != "" {
-			if val, err := strconv.ParseFloat(out, 64); err == nil {
-				cores := runtime.NumCPU()
-				if cores > 0 {
-					pct := int(val / float64(cores))
-					if pct > 100 {
-						pct = 100
-					}
-					return fmt.Sprintf("%d%%", pct)
+			lines := strings.Split(out, "\n")
+			var total float64
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if line == "%CPU" || line == "" {
+					continue
 				}
+				if val, err := strconv.ParseFloat(line, 64); err == nil {
+					total += val
+				}
+			}
+			cores := runtime.NumCPU()
+			if cores > 0 {
+				pct := int(total / float64(cores))
+				if pct > 100 {
+					pct = 100
+				}
+				return fmt.Sprintf("%d%%", pct)
 			}
 		}
 	}
