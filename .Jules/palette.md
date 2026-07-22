@@ -39,3 +39,7 @@
 ## 2024-07-20 - Distinguish Omitted vs Empty Flags
 **Learning:** When validating CLI string flags using strict explicit empty checks (like `flag == ""`), you must distinguish between a flag being omitted entirely by the user (which should fall back to a default value safely) and a flag being explicitly provided by the user with an empty value (e.g., `--theme=`). Applying empty-string rejection logic to variables without checking if the prefix was passed causes omissions to falsely trigger error conditions.
 **Action:** When enforcing explicit string flag validation, explicitly scope the validation to the block of code executed *when the flag is matched* (e.g., inside `strings.HasPrefix(arg, "--flag=")`) to prevent regressions that break omitted flags.
+
+## 2024-10-24 - Provide actionable CLI error messages instead of generic help pointers
+**Learning:** For a CLI tool, simply printing "Run --help for usage" when a user provides an invalid flag value creates friction. It is much more user-friendly to print the explicit list of valid options directly in the error message for that specific flag, saving the user an extra command.
+**Action:** When adding or updating CLI flags that require specific values from a set (like themes, styles, or modes), include the valid options in the error output directly rather than redirecting to the general help screen.
