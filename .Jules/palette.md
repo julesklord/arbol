@@ -43,3 +43,7 @@
 ## 2024-10-24 - Provide actionable CLI error messages instead of generic help pointers
 **Learning:** For a CLI tool, simply printing "Run --help for usage" when a user provides an invalid flag value creates friction. It is much more user-friendly to print the explicit list of valid options directly in the error message for that specific flag, saving the user an extra command.
 **Action:** When adding or updating CLI flags that require specific values from a set (like themes, styles, or modes), include the valid options in the error output directly rather than redirecting to the general help screen.
+
+## 2024-12-19 - Improved CLI flag error actionability
+**Learning:** Invalid enum-style flag inputs simply listed available values without directing users how to get help.
+**Action:** Added explicit suggestions to run `--help` in all CLI flag validation error blocks, matching the UX of unknown flag errors.
