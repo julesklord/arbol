@@ -25,7 +25,7 @@ Download the latest binary for your platform from the [releases page](https://gi
 
 ```bash
 # Example for Linux x86_64
-curl -sL https://github.com/julesklord/arbol/releases/download/v0.6.0/arbol_0.6.0_linux_amd64.tar.gz | tar xz
+curl -sL https://github.com/julesklord/arbol/releases/download/v0.7.0/arbol_0.7.0_linux_amd64.tar.gz | tar xz
 sudo install arbol /usr/local/bin/
 ```
 

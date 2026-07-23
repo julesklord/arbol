@@ -2,7 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.7.0 - CLI Validation, Theme-Aware Bars & Native Sysinfo Performance
+- Validated CLI style and mode flags (`--theme`, `--bar-style`, `--tree-style`, `--logo`, `--sparkline`, `--live`) with clear, actionable error messages (#38, #39, #41, #43, #44, #53, #55).
+- Applied theme bar colors to progress bars instead of hardcoded ANSI codes (#40).
+- Optimized sysinfo gathering by eliminating bash subprocesses and using native syscalls for kernel (`Uname`), uptime/swap (`Sysinfo`), and disk usage (#37, #42, #54, #56).
+- Optimized sparkline disk percent collection with `strings.SplitN` (#49).
+- Added unit tests for tree styles, themes, sparkline buffer, and plugin name formatting (#45, #48, #51, #52).
+- Fixed `TestGetBar` to force colors and default theme so tests pass under `NO_COLOR`.
+- Updated documentation and assets; removed obsolete wiki content from the main repo.
+
 ## 0.6.0 - Code Health, Security Hardening & Performance Optimizations
+
 - Improved ANSI escape sequence stripping to handle all CSI terminators (0x40-0x7E) instead of only `m`, preventing evasion (#26).
 - Added execution timeouts (2s) for `getDisk` and `getGPU` commands to prevent hanging on unresponsive hardware (#27).
 - Optimized `getProcesses` on Linux using `syscall.Sysinfo` (~83x faster, from 92µs to 1µs) (#19).

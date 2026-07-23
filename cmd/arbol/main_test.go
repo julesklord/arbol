@@ -109,6 +109,19 @@ func TestStripANSI(t *testing.T) {
 }
 
 func TestGetBar(t *testing.T) {
+	// Force a deterministic theme/style and enable colors even if NO_COLOR is set.
+	origColorDisabled := ColorDisabled
+	origTheme := currentTheme
+	origBarStyle := currentBarStyle
+	ColorDisabled = false
+	currentTheme = themes["default"]
+	currentBarStyle = BarStyleBlock
+	t.Cleanup(func() {
+		ColorDisabled = origColorDisabled
+		currentTheme = origTheme
+		currentBarStyle = origBarStyle
+	})
+
 	tests := []struct {
 		name string
 		pct  int
