@@ -57,6 +57,7 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 			if outputFmt == "" {
 				fmt.Fprintf(os.Stderr, "Error: flag '--output=' requires a value\n")
 				fmt.Fprintf(os.Stderr, "Available formats: json, xml, txt\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 				os.Exit(1)
 			}
 		} else if strings.HasPrefix(arg, "--logo=") {
@@ -64,6 +65,7 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 			if logoMode == "" {
 				fmt.Fprintf(os.Stderr, "Error: flag '--logo=' requires a value\n")
 				fmt.Fprintf(os.Stderr, "Available logo modes: simple, banner\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 				os.Exit(1)
 			}
 		} else if strings.HasPrefix(arg, "--theme=") {
@@ -71,6 +73,7 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 			if themeName == "" {
 				fmt.Fprintf(os.Stderr, "Error: flag '--theme=' requires a value\n")
 				fmt.Fprintf(os.Stderr, "Available themes: default, catppuccin, catppuccin-mocha, catppuccin-latte, dracula, nord, tokyonight, gruvbox, everforest, monokai, rose-pine, solarized\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 				os.Exit(1)
 			}
 		} else if strings.HasPrefix(arg, "--bar-style=") {
@@ -78,6 +81,7 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 			if barStyleName == "" {
 				fmt.Fprintf(os.Stderr, "Error: flag '--bar-style=' requires a value\n")
 				fmt.Fprintf(os.Stderr, "Available bar styles: block, braille, gradient, dot\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 				os.Exit(1)
 			}
 		} else if strings.HasPrefix(arg, "--tree-style=") {
@@ -85,6 +89,7 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 			if treeStyleName == "" {
 				fmt.Fprintf(os.Stderr, "Error: flag '--tree-style=' requires a value\n")
 				fmt.Fprintf(os.Stderr, "Available tree styles: default, rounded, heavy, double, ascii, dotted\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 				os.Exit(1)
 			}
 		} else if strings.HasPrefix(arg, "--sparkline") {
@@ -111,6 +116,7 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 			if sparklineStyleName == "" {
 				fmt.Fprintf(os.Stderr, "Error: flag '--sparkline-style=' requires a value\n")
 				fmt.Fprintf(os.Stderr, "Available sparkline styles: block, braille, dots\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 				os.Exit(1)
 			}
 		} else if strings.HasPrefix(arg, "--plugins-dir=") {
@@ -639,6 +645,7 @@ func renderOutput(noASCII, minimal bool, outputFmt string, infoObj SystemInfo, e
 		default:
 			fmt.Fprintf(os.Stderr, "Error: unknown output format '%s'\n", outputFmt)
 			fmt.Fprintf(os.Stderr, "Supported formats: json, xml, txt\n")
+			fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 			os.Exit(1)
 		}
 	}
@@ -944,6 +951,7 @@ func main() {
 	if logoMode != "" && logoMode != "simple" && logoMode != "banner" {
 		fmt.Fprintf(os.Stderr, "Error: unknown logo mode '%s'\n", logoMode)
 		fmt.Fprintf(os.Stderr, "Available logo modes: simple, banner\n")
+		fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 		os.Exit(1)
 	}
 
@@ -951,6 +959,7 @@ func main() {
 		if !SetTheme(themeName) {
 			fmt.Fprintf(os.Stderr, "Error: unknown theme '%s'\n", themeName)
 			fmt.Fprintf(os.Stderr, "Available themes: default, catppuccin, catppuccin-mocha, catppuccin-latte, dracula, nord, tokyonight, gruvbox, everforest, monokai, rose-pine, solarized\n")
+			fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 			os.Exit(1)
 		}
 	}
@@ -960,6 +969,7 @@ func main() {
 		if !ok {
 			fmt.Fprintf(os.Stderr, "Error: unknown bar style '%s'\n", barStyleName)
 			fmt.Fprintf(os.Stderr, "Available bar styles: block, braille, gradient, dot\n")
+			fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 			os.Exit(1)
 		}
 		SetBarStyle(style)
@@ -970,6 +980,7 @@ func main() {
 		if !ok {
 			fmt.Fprintf(os.Stderr, "Error: unknown tree style '%s'\n", treeStyleName)
 			fmt.Fprintf(os.Stderr, "Available tree styles: default, rounded, heavy, double, ascii, dotted\n")
+			fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 			os.Exit(1)
 		}
 		SetTreeStyle(style)
@@ -980,6 +991,7 @@ func main() {
 		if !ok {
 			fmt.Fprintf(os.Stderr, "Error: unknown sparkline style '%s'\n", sparklineStyleName)
 			fmt.Fprintf(os.Stderr, "Available sparkline styles: block, braille, dots\n")
+			fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 			os.Exit(1)
 		}
 		SetSparklineStyle(style)
