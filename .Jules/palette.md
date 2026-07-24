@@ -47,3 +47,6 @@
 ## 2024-12-19 - Improved CLI flag error actionability
 **Learning:** Invalid enum-style flag inputs simply listed available values without directing users how to get help.
 **Action:** Added explicit suggestions to run `--help` in all CLI flag validation error blocks, matching the UX of unknown flag errors.
+## 2024-05-24 - [CLI Help Formatting]
+**Learning:** Tabular, vertically-aligned lists with clear spacing make scanning CLI flags significantly faster and more intuitive for users than densely packed paragraphs.
+**Action:** When adding or modifying CLI flags, ensure they are added to a formatted block with appropriate padding between the flag and its description, rather than just appending to a string.
