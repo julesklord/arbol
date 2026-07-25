@@ -629,6 +629,26 @@ func drawBannerLogo(osName string) {
 	fmt.Println(gradientString(bot, start[0], start[1], start[2], end[0], end[1], end[2]))
 }
 
+func formatInfoValue(val string, theme Theme, italic string, reset string) string {
+	if ColorDisabled {
+		return val
+	}
+	if val == "n/a" || strings.HasPrefix(val, "n/a (") {
+		return theme.Muted + val + reset
+	}
+	return italic + val + reset
+}
+
+func formatResValue(val string, theme Theme, reset string) string {
+	if ColorDisabled {
+		return val
+	}
+	if val == "n/a" || strings.HasPrefix(val, "n/a (") {
+		return theme.Muted + val + reset
+	}
+	return val
+}
+
 func renderOutput(noASCII, minimal bool, outputFmt string, infoObj SystemInfo, extPluginsDir, logoMode string, sparklineEnabled bool) {
 	// Intercept output format flag early
 	if outputFmt != "" {
@@ -758,51 +778,51 @@ func renderOutput(noASCII, minimal bool, outputFmt string, infoObj SystemInfo, e
 
 	// Specs category
 	specsNode := &TreeNode{Text: lcyan + bold + "⚙ specs" + reset}
-	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "📦 kernel: " + reset + italic + infoObj.Kernel + reset})
-	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "⏱ uptime: " + reset + italic + infoObj.Uptime + reset})
-	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "💻 shell: " + reset + italic + infoObj.Shell + reset})
-	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "🧠 cpu: " + reset + italic + infoObj.CPU + reset})
-	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "🎮 gpu: " + reset + italic + infoObj.GPU + reset})
-	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "🖥 de/wm: " + reset + italic + infoObj.DEWM + reset})
-	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "📟 terminal: " + reset + italic + infoObj.Terminal + reset})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "📦 kernel: " + reset + formatInfoValue(infoObj.Kernel, theme, italic, reset)})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "⏱ uptime: " + reset + formatInfoValue(infoObj.Uptime, theme, italic, reset)})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "💻 shell: " + reset + formatInfoValue(infoObj.Shell, theme, italic, reset)})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "🧠 cpu: " + reset + formatInfoValue(infoObj.CPU, theme, italic, reset)})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "🎮 gpu: " + reset + formatInfoValue(infoObj.GPU, theme, italic, reset)})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "🖥 de/wm: " + reset + formatInfoValue(infoObj.DEWM, theme, italic, reset)})
+	specsNode.Children = append(specsNode.Children, &TreeNode{Text: lblue + "📟 terminal: " + reset + formatInfoValue(infoObj.Terminal, theme, italic, reset)})
 	root.Children = append(root.Children, specsNode)
 
 	// Resources category
 	resourcesNode := &TreeNode{Text: lcyan + bold + "📊 resources" + reset}
 
 	// CPU Usage with optional sparkline
-	cpuText := lblue + "📈 cpu usage: " + reset + cpuUsageVal
-	if sparklineEnabled {
+	cpuText := lblue + "📈 cpu usage: " + reset + formatResValue(cpuUsageVal, theme, reset)
+	if sparklineEnabled && infoObj.CPUUsage != "n/a" {
 		cpuText += "  " + getSparklineCPU(theme)
 	}
 	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: cpuText})
 
 	if infoObj.CPUTemp != "n/a" {
-		resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "🌡️ cpu temp: " + reset + italic + infoObj.CPUTemp + reset})
+		resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "🌡️ cpu temp: " + reset + formatInfoValue(infoObj.CPUTemp, theme, italic, reset)})
 	}
 
 	// Memory with optional sparkline
-	memText := lblue + "💾 memory: " + reset + memVal
-	if sparklineEnabled {
+	memText := lblue + "💾 memory: " + reset + formatResValue(memVal, theme, reset)
+	if sparklineEnabled && infoObj.Memory != "n/a" && !strings.HasPrefix(infoObj.Memory, "n/a (") {
 		memText += "  " + getSparklineMem(theme)
 	}
 	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: memText})
 
 	// Swap with optional sparkline
-	swapText := lblue + "🔄 swap: " + reset + swapVal
-	if sparklineEnabled {
+	swapText := lblue + "🔄 swap: " + reset + formatResValue(swapVal, theme, reset)
+	if sparklineEnabled && infoObj.Swap != "n/a" && !strings.HasPrefix(infoObj.Swap, "n/a (") {
 		swapText += "  " + getSparklineSwap(theme)
 	}
 	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: swapText})
 
 	// Disk with optional sparkline
-	diskText := lblue + "💿 disk: " + reset + diskVal
-	if sparklineEnabled {
+	diskText := lblue + "💿 disk: " + reset + formatResValue(diskVal, theme, reset)
+	if sparklineEnabled && infoObj.Disk != "n/a" && !strings.HasPrefix(infoObj.Disk, "n/a (") {
 		diskText += "  " + getSparklineDisk(theme)
 	}
 	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: diskText})
 
-	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "⚡ processes: " + reset + italic + infoObj.Processes + reset})
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "⚡ processes: " + reset + formatInfoValue(infoObj.Processes, theme, italic, reset)})
 	root.Children = append(root.Children, resourcesNode)
 
 	// Simple Plugins category
