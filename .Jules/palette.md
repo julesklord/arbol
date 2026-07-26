@@ -47,3 +47,6 @@
 ## 2024-12-19 - Improved CLI flag error actionability
 **Learning:** Invalid enum-style flag inputs simply listed available values without directing users how to get help.
 **Action:** Added explicit suggestions to run `--help` in all CLI flag validation error blocks, matching the UX of unknown flag errors.
+## 2024-07-26 - Prevent CLI Flag Fallthrough Due to Prefix Overlap
+**Learning:** When manually implementing CLI flag parsing with `strings.HasPrefix` (or similar methods) in Go, ensure that longer, more specific prefixes (e.g., `--sparkline-style=`) are evaluated before shorter, related prefixes (e.g., `--sparkline`). This prevents the shorter prefix from incorrectly intercepting and mishandling the argument.
+**Action:** When manually parsing flags, always place the most specific/longest prefix checks first.
