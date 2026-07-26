@@ -13,9 +13,19 @@ func getProcesses() string {
 	if err := syscall.Sysinfo(&info); err == nil {
 		return strconv.FormatUint(uint64(info.Procs), 10)
 	}
-	out := runCommand("bash", "-c", "ps -ax | wc -l")
+	// OPTIMIZATION: Avoid shelling out to bash and wc
+	out := runCommand("ps", "-ax")
 	if out != "" {
-		return strings.TrimSpace(out)
+		lines := strings.Split(out, "\n")
+		count := 0
+		for _, line := range lines {
+			if strings.TrimSpace(line) != "" {
+				count++
+			}
+		}
+		if count > 1 {
+			return strconv.Itoa(count - 1)
+		}
 	}
 	return "n/a"
 }
