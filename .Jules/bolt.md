@@ -7,3 +7,6 @@
 ## 2024-10-24 - Avoiding `bash -c` Pipelines in Go
 **Learning:** Shelling out to `bash -c "cmd | grep | awk"` creates immense overhead due to spawning multiple subprocesses. `getGPU` execution dropped from ~5.8ms to ~0.05ms simply by invoking the base command natively and handling string manipulation in Go.
 **Action:** When retrieving system info, always invoke native commands (e.g., `runCommand("ps", "-A")`) and use pure Go `strings` and `strconv` packages to parse the output instead of relying on shell pipes.
+## 2024-07-25 - Avoid Shelling Out to Subprocesses for Aggregation in Go
+**Learning:** Shelling out to bash pipelines (e.g., `bash -c "ps -A -o %cpu | awk '{s+=$1} END {print s}'"`) is incredibly slow compared to native processing in Go. We should avoid spawning subprocesses whenever possible, especially for tasks that require string manipulation or simple arithmetic. Native Go functions for splitting, scanning, and float parsing are much more performant.
+**Action:** When implementing aggregation or data parsing from system commands, favor executing a single base command and processing its stdout using native Go methods (like `strings.Split`, `strings.Contains`, and `strconv`) rather than using multiple chained subprocesses or external bash tools like `awk`, `tr`, or `wc`.

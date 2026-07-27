@@ -47,6 +47,11 @@
 ## 2024-12-19 - Improved CLI flag error actionability
 **Learning:** Invalid enum-style flag inputs simply listed available values without directing users how to get help.
 **Action:** Added explicit suggestions to run `--help` in all CLI flag validation error blocks, matching the UX of unknown flag errors.
+
 ## 2024-07-25 - Dimming unavailable data reduces visual noise
 **Learning:** When displaying a dense layout of system metrics (like in a fastfetch-style tool), 'n/a' or unavailable data points command too much visual attention when styled identically to available data (e.g. using the same bright italic colors). This creates visual clutter and makes it harder for the user to scan for the metrics that actually matter.
 **Action:** Always intercept null/unavailable states ('n/a') in CLI or dashboard text outputs and explicitly format them using a muted/dimmed theme color to push them to the background visually, allowing valid data to stand out.
+
+## 2024-07-26 - Prevent CLI Flag Fallthrough Due to Prefix Overlap
+**Learning:** When manually implementing CLI flag parsing with `strings.HasPrefix` (or similar methods) in Go, ensure that longer, more specific prefixes (e.g., `--sparkline-style=`) are evaluated before shorter, related prefixes (e.g., `--sparkline`). This prevents the shorter prefix from incorrectly intercepting and mishandling the argument.
+**Action:** When manually parsing flags, always place the most specific/longest prefix checks first.
