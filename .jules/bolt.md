@@ -9,3 +9,7 @@
 ## 2026-07-20 - Uptime and Swap Retrieval Performance
 **Learning:** Parsing `/proc/uptime` and `/proc/meminfo` involves file I/O and string allocations, which takes ~15-30µs per call. Using native `syscall.Sysinfo` accesses system metrics directly and executes in ~1µs (15x-30x speedup), significantly reducing overhead especially during frequent live updates.
 **Action:** Replaced `/proc/uptime` and `/proc/meminfo` file parsing with `syscall.Sysinfo` in `getUptime`, `getSwap` and `collectSwapPercent` for Linux to improve performance.
+
+## 2024-07-26 - Sparkline and getCPU/getMem Performance on macOS (Darwin)
+**Learning:** Shelling out to `bash -c` with `awk` and `tr` pipelines (like `ps -A -o %cpu | awk ...` or `vm_stat | awk ...`) incurs immense subprocess overhead, taking roughly ~50ms+ per invocation. Given that `collectCPUPercent` and `collectMemPercent` are called on a tight loop for sparklines (e.g. 1-second interval), this eats a lot of unnecessary CPU and memory.
+**Action:** Replace shell pipelines involving `bash -c` with direct `exec.Command` calls (e.g. `ps -A -o %cpu` and `vm_stat`) and process their output natively in Go using `strings.Split` and `strconv.ParseFloat`. This improves cross-platform speed significantly and prevents blocking the main thread during live updates.
