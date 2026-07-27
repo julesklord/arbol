@@ -92,6 +92,14 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 				os.Exit(1)
 			}
+		} else if strings.HasPrefix(arg, "--sparkline-style=") {
+			sparklineStyleName = strings.TrimPrefix(arg, "--sparkline-style=")
+			if sparklineStyleName == "" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--sparkline-style=' requires a value\n")
+				fmt.Fprintf(os.Stderr, "Available sparkline styles: block, braille, dots\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
 		} else if strings.HasPrefix(arg, "--sparkline") {
 			if arg == "--sparkline" {
 				sparklineEnabled = true
@@ -110,14 +118,6 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 					fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 					os.Exit(1)
 				}
-			}
-		} else if strings.HasPrefix(arg, "--sparkline-style=") {
-			sparklineStyleName = strings.TrimPrefix(arg, "--sparkline-style=")
-			if sparklineStyleName == "" {
-				fmt.Fprintf(os.Stderr, "Error: flag '--sparkline-style=' requires a value\n")
-				fmt.Fprintf(os.Stderr, "Available sparkline styles: block, braille, dots\n")
-				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
-				os.Exit(1)
 			}
 		} else if strings.HasPrefix(arg, "--plugins-dir=") {
 			val := strings.TrimPrefix(arg, "--plugins-dir=")
