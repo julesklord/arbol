@@ -4,7 +4,6 @@ import (
 	"syscall"
 
 	"bufio"
-	"fmt"
 	"os"
 	"runtime"
 	"strconv"
@@ -258,9 +257,9 @@ func collectMemPercent() int {
 			for scanner.Scan() {
 				line := scanner.Text()
 				if strings.HasPrefix(line, "MemTotal:") {
-					fmt.Sscanf(line, "MemTotal: %d kB", &total)
+					total = parseMem(line)
 				} else if strings.HasPrefix(line, "MemAvailable:") {
-					fmt.Sscanf(line, "MemAvailable: %d kB", &avail)
+					avail = parseMem(line)
 				}
 			}
 			if total > 0 {
