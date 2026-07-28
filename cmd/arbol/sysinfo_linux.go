@@ -16,12 +16,9 @@ func getProcesses() string {
 	// OPTIMIZATION: Avoid shelling out to bash and wc
 	out := runCommand("ps", "-ax")
 	if out != "" {
-		lines := strings.Split(out, "\n")
-		count := 0
-		for _, line := range lines {
-			if strings.TrimSpace(line) != "" {
-				count++
-			}
+		count := strings.Count(out, "\n")
+		if len(out) > 0 && out[len(out)-1] != '\n' {
+			count++
 		}
 		if count > 1 {
 			return strconv.Itoa(count - 1)
