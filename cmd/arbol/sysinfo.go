@@ -160,9 +160,9 @@ func getMemory() string {
 			for scanner.Scan() {
 				line := scanner.Text()
 				if strings.HasPrefix(line, "MemTotal:") {
-					fmt.Sscanf(line, "MemTotal: %d kB", &total)
+					total = parseMem(line)
 				} else if strings.HasPrefix(line, "MemAvailable:") {
-					fmt.Sscanf(line, "MemAvailable: %d kB", &avail)
+					avail = parseMem(line)
 				}
 			}
 			if total > 0 {
@@ -458,4 +458,21 @@ func getCPUTemp() string {
 		}
 	}
 	return "n/a"
+}
+
+// parseMem extracts the integer value from a meminfo line like "MemTotal:       16301328 kB"
+// This is significantly faster than fmt.Sscanf or strings.Fields
+func parseMem(line string) int64 {
+	idx := strings.IndexByte(line, ':')
+	if idx == -1 {
+		return 0
+	}
+	s := line[idx+1:]
+	s = strings.TrimLeft(s, " \t")
+	idx2 := strings.IndexByte(s, ' ')
+	if idx2 != -1 {
+		s = s[:idx2]
+	}
+	val, _ := strconv.ParseInt(s, 10, 64)
+	return val
 }
