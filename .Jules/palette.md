@@ -55,3 +55,7 @@
 ## 2024-07-26 - Prevent CLI Flag Fallthrough Due to Prefix Overlap
 **Learning:** When manually implementing CLI flag parsing with `strings.HasPrefix` (or similar methods) in Go, ensure that longer, more specific prefixes (e.g., `--sparkline-style=`) are evaluated before shorter, related prefixes (e.g., `--sparkline`). This prevents the shorter prefix from incorrectly intercepting and mishandling the argument.
 **Action:** When manually parsing flags, always place the most specific/longest prefix checks first.
+
+## 2024-07-28 - Explicitly Handling Omitted Values for Explicit CLI Flags
+**Learning:** For explicit string CLI flags (e.g. `--theme` or `--bar-style`), relying only on a general catch-all error handling strategy or falling through to default unknown flag error handlers produces generic errors that require users to run `--help` manually. Surface actionable errors with explicit available options for flags that require a value.
+**Action:** When evaluating explicit string flags in CLI, explicitly check for exact matches (omitted value scenarios) alongside prefix matches. For exact matches, surface a targeted, actionable error that lists valid inputs for that specific flag, reducing friction for the end user.

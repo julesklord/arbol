@@ -52,7 +52,13 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 			minimal = true
 		} else if arg == "--noframe" {
 			// no-op: kept for backwards compatibility
-		} else if strings.HasPrefix(arg, "--output=") {
+		} else if strings.HasPrefix(arg, "--output=") || arg == "--output" {
+			if arg == "--output" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--output' requires a value (e.g., --output=VALUE)\n")
+				fmt.Fprintf(os.Stderr, "Available formats: json, xml, txt\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
 			outputFmt = strings.TrimPrefix(arg, "--output=")
 			if outputFmt == "" {
 				fmt.Fprintf(os.Stderr, "Error: flag '--output=' requires a value\n")
@@ -60,7 +66,13 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 				os.Exit(1)
 			}
-		} else if strings.HasPrefix(arg, "--logo=") {
+		} else if strings.HasPrefix(arg, "--logo=") || arg == "--logo" {
+			if arg == "--logo" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--logo' requires a value (e.g., --logo=VALUE)\n")
+				fmt.Fprintf(os.Stderr, "Available logo modes: simple, banner\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
 			logoMode = strings.TrimPrefix(arg, "--logo=")
 			if logoMode == "" {
 				fmt.Fprintf(os.Stderr, "Error: flag '--logo=' requires a value\n")
@@ -68,7 +80,13 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 				os.Exit(1)
 			}
-		} else if strings.HasPrefix(arg, "--theme=") {
+		} else if strings.HasPrefix(arg, "--theme=") || arg == "--theme" {
+			if arg == "--theme" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--theme' requires a value (e.g., --theme=VALUE)\n")
+				fmt.Fprintf(os.Stderr, "Available themes: default, catppuccin, catppuccin-mocha, catppuccin-latte, dracula, nord, tokyonight, gruvbox, everforest, monokai, rose-pine, solarized\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
 			themeName = strings.TrimPrefix(arg, "--theme=")
 			if themeName == "" {
 				fmt.Fprintf(os.Stderr, "Error: flag '--theme=' requires a value\n")
@@ -76,7 +94,13 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 				os.Exit(1)
 			}
-		} else if strings.HasPrefix(arg, "--bar-style=") {
+		} else if strings.HasPrefix(arg, "--bar-style=") || arg == "--bar-style" {
+			if arg == "--bar-style" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--bar-style' requires a value (e.g., --bar-style=VALUE)\n")
+				fmt.Fprintf(os.Stderr, "Available bar styles: block, braille, gradient, dot\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
 			barStyleName = strings.TrimPrefix(arg, "--bar-style=")
 			if barStyleName == "" {
 				fmt.Fprintf(os.Stderr, "Error: flag '--bar-style=' requires a value\n")
@@ -84,7 +108,13 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 				os.Exit(1)
 			}
-		} else if strings.HasPrefix(arg, "--tree-style=") {
+		} else if strings.HasPrefix(arg, "--tree-style=") || arg == "--tree-style" {
+			if arg == "--tree-style" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--tree-style' requires a value (e.g., --tree-style=VALUE)\n")
+				fmt.Fprintf(os.Stderr, "Available tree styles: default, rounded, heavy, double, ascii, dotted\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
 			treeStyleName = strings.TrimPrefix(arg, "--tree-style=")
 			if treeStyleName == "" {
 				fmt.Fprintf(os.Stderr, "Error: flag '--tree-style=' requires a value\n")
@@ -92,7 +122,13 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 				os.Exit(1)
 			}
-		} else if strings.HasPrefix(arg, "--sparkline-style=") {
+		} else if strings.HasPrefix(arg, "--sparkline-style=") || arg == "--sparkline-style" {
+			if arg == "--sparkline-style" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--sparkline-style' requires a value (e.g., --sparkline-style=VALUE)\n")
+				fmt.Fprintf(os.Stderr, "Available sparkline styles: block, braille, dots\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
 			sparklineStyleName = strings.TrimPrefix(arg, "--sparkline-style=")
 			if sparklineStyleName == "" {
 				fmt.Fprintf(os.Stderr, "Error: flag '--sparkline-style=' requires a value\n")
@@ -119,7 +155,12 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 					os.Exit(1)
 				}
 			}
-		} else if strings.HasPrefix(arg, "--plugins-dir=") {
+		} else if strings.HasPrefix(arg, "--plugins-dir=") || arg == "--plugins-dir" {
+			if arg == "--plugins-dir" {
+				fmt.Fprintf(os.Stderr, "Error: flag '--plugins-dir' requires a value (e.g., --plugins-dir=VALUE)\n")
+				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
+				os.Exit(1)
+			}
 			val := strings.TrimPrefix(arg, "--plugins-dir=")
 			if val == "" {
 				fmt.Fprintf(os.Stderr, "Error: flag '--plugins-dir=' requires a value\n")
@@ -127,10 +168,6 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 				os.Exit(1)
 			}
 			os.Setenv("ARBOL_PLUGINS_DIR", val)
-		} else if arg == "--plugins-dir" {
-			fmt.Fprintf(os.Stderr, "Error: flag '--plugins-dir' requires a value (e.g., --plugins-dir=VALUE)\n")
-			fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
-			os.Exit(1)
 		} else if strings.HasPrefix(arg, "--live") {
 			liveEnabled = true
 			if arg == "--live" {
@@ -150,10 +187,6 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 					os.Exit(1)
 				}
 			}
-		} else if arg == "--output" || arg == "--logo" || arg == "--theme" || arg == "--bar-style" || arg == "--tree-style" || arg == "--sparkline-style" {
-			fmt.Fprintf(os.Stderr, "Error: flag '%s' requires a value (e.g., %s=VALUE)\n", arg, arg)
-			fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
-			os.Exit(1)
 		} else if arg == "--version" || arg == "-v" {
 			fmt.Println("arbol version", version)
 			os.Exit(0)
