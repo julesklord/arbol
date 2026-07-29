@@ -12,13 +12,10 @@ func getProcesses() string {
 	// OPTIMIZATION: Avoid shelling out to bash and wc
 	out := runCommand("ps", "-ax")
 	if out != "" {
-		lines := strings.Split(out, "\n")
-		// ps output includes a header line, and we split by newline so the last might be empty
-		count := 0
-		for _, line := range lines {
-			if strings.TrimSpace(line) != "" {
-				count++
-			}
+		// ps output includes a header line, so count newlines
+		count := strings.Count(out, "\n")
+		if len(out) > 0 && out[len(out)-1] != '\n' {
+			count++
 		}
 		if count > 1 {
 			// Subtract 1 for the header
@@ -35,7 +32,6 @@ func getKernel() string {
 	}
 	return "n/a"
 }
-
 
 func getSysinfoUptime() (int64, error) {
 	return 0, errors.New("not supported")
