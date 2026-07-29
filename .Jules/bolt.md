@@ -16,3 +16,6 @@
 ## 2024-11-20 - Optimize strings.Split for line counting
 **Learning:** Using `strings.Split(out, "\n")` purely to count lines creates significant memory allocation overhead by instantiating a slice with O(N) elements, especially for commands that output many lines like `ps -ax`. Using `strings.Count(out, "\n")` and adjusting for edge cases avoids this allocation completely, reducing execution time from ~16µs to ~0.3µs (a ~47x speedup).
 **Action:** When extracting counts or iterating merely to tally lines from command outputs, always prefer `strings.Count` over `strings.Split` to optimize memory and CPU usage.
+## 2026-07-29 - Optimize /proc scanning
+**Learning:** When scanning files line-by-line where only a few lines at the top contain the necessary information (like `MemTotal` and `MemAvailable` in `/proc/meminfo`), scanning the entire file introduces unnecessary allocations and CPU overhead. Also, using `strings.SplitN` for simple colon separation allocates string slices, whereas `strings.IndexByte` with slice indexing avoids it completely.
+**Action:** Always add early breaks in `bufio.Scanner` loops once the required data is collected, and prefer `strings.IndexByte` over `strings.Split` for simple tokenization in hot paths.
