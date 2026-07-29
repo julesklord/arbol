@@ -136,7 +136,7 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 				fmt.Fprintf(os.Stderr, "Run '%s --help' for usage.\n", os.Args[0])
 				os.Exit(1)
 			}
-		} else if strings.HasPrefix(arg, "--sparkline") {
+		} else if arg == "--sparkline" || strings.HasPrefix(arg, "--sparkline=") {
 			if arg == "--sparkline" {
 				sparklineEnabled = true
 			} else if strings.HasPrefix(arg, "--sparkline=") {
@@ -168,7 +168,7 @@ func parseFlags() (bool, bool, string, string, string, string, string, bool, int
 				os.Exit(1)
 			}
 			os.Setenv("ARBOL_PLUGINS_DIR", val)
-		} else if strings.HasPrefix(arg, "--live") {
+		} else if arg == "--live" || strings.HasPrefix(arg, "--live=") {
 			liveEnabled = true
 			if arg == "--live" {
 				liveInterval = 1000
