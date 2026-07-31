@@ -13,3 +13,7 @@
 ## 2024-07-26 - Sparkline and getCPU/getMem Performance on macOS (Darwin)
 **Learning:** Shelling out to `bash -c` with `awk` and `tr` pipelines (like `ps -A -o %cpu | awk ...` or `vm_stat | awk ...`) incurs immense subprocess overhead, taking roughly ~50ms+ per invocation. Given that `collectCPUPercent` and `collectMemPercent` are called on a tight loop for sparklines (e.g. 1-second interval), this eats a lot of unnecessary CPU and memory.
 **Action:** Replace shell pipelines involving `bash -c` with direct `exec.Command` calls (e.g. `ps -A -o %cpu` and `vm_stat`) and process their output natively in Go using `strings.Split` and `strconv.ParseFloat`. This improves cross-platform speed significantly and prevents blocking the main thread during live updates.
+
+## 2024-05-24 - sysinfo.go getCPUTicks Optimization
+**Learning:** Found an opportunity to optimize `/proc/stat` parsing in Go by eliminating the use of `strings.Fields()` which allocates a slice and strings for each token, and instead parsing integers in a single pass over the string buffer using a custom loop.
+**Action:** When extracting data from Linux procfs files in high-frequency/hot paths, skip generic string-splitting functions in favor of hand-rolled indexing loops for scanning string values.
