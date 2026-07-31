@@ -59,3 +59,7 @@
 ## 2024-07-28 - Explicitly Handling Omitted Values for Explicit CLI Flags
 **Learning:** For explicit string CLI flags (e.g. `--theme` or `--bar-style`), relying only on a general catch-all error handling strategy or falling through to default unknown flag error handlers produces generic errors that require users to run `--help` manually. Surface actionable errors with explicit available options for flags that require a value.
 **Action:** When evaluating explicit string flags in CLI, explicitly check for exact matches (omitted value scenarios) alongside prefix matches. For exact matches, surface a targeted, actionable error that lists valid inputs for that specific flag, reducing friction for the end user.
+## 2024-07-29 - Explicit Flag Matching
+
+**Learning:** When implementing custom CLI flag parsing in Go, using simple prefix matching (like `strings.HasPrefix(arg, "--flag")`) can swallow incorrectly named flags that happen to start with the same prefix (e.g., `--flags=xyz`), preventing an actionable "unknown flag" error.
+**Action:** When manually parsing flags, avoid `strings.HasPrefix` for checking boolean flags. Instead, use an explicit string equality check (`arg == "--flag"`) or an explicitly delimited prefix check (`strings.HasPrefix(arg, "--flag=")`).
