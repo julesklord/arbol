@@ -365,16 +365,34 @@ func getCPUTicks() (user, nice, system, idle, iowait, irq, softirq int64, err er
 	scanner := bufio.NewScanner(file)
 	if scanner.Scan() {
 		line := scanner.Text()
-		fields := strings.Fields(line)
-		if len(fields) >= 8 && fields[0] == "cpu" {
-			user, _ = strconv.ParseInt(fields[1], 10, 64)
-			nice, _ = strconv.ParseInt(fields[2], 10, 64)
-			system, _ = strconv.ParseInt(fields[3], 10, 64)
-			idle, _ = strconv.ParseInt(fields[4], 10, 64)
-			iowait, _ = strconv.ParseInt(fields[5], 10, 64)
-			irq, _ = strconv.ParseInt(fields[6], 10, 64)
-			softirq, _ = strconv.ParseInt(fields[7], 10, 64)
-			return
+		if strings.HasPrefix(line, "cpu ") {
+			// ⚡ Bolt: Fast path without strings.Fields overhead.
+			idx := 3 // skip "cpu"
+			var vals [7]int64
+			valIdx := 0
+			for valIdx < 7 && idx < len(line) {
+				for idx < len(line) && line[idx] == ' ' {
+					idx++
+				}
+				if idx >= len(line) {
+					break
+				}
+				end := idx
+				for end < len(line) && line[end] != ' ' {
+					end++
+				}
+				if end > idx {
+					v, err := strconv.ParseInt(line[idx:end], 10, 64)
+					if err == nil {
+						vals[valIdx] = v
+						valIdx++
+					}
+				}
+				idx = end
+			}
+			if valIdx >= 7 {
+				return vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], nil
+			}
 		}
 	}
 	return 0, 0, 0, 0, 0, 0, 0, fmt.Errorf("invalid format")
