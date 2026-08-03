@@ -17,3 +17,11 @@
 ## 2024-05-24 - sysinfo.go getCPUTicks Optimization
 **Learning:** Found an opportunity to optimize `/proc/stat` parsing in Go by eliminating the use of `strings.Fields()` which allocates a slice and strings for each token, and instead parsing integers in a single pass over the string buffer using a custom loop.
 **Action:** When extracting data from Linux procfs files in high-frequency/hot paths, skip generic string-splitting functions in favor of hand-rolled indexing loops for scanning string values.
+
+## 2024-08-11 - Sparkline MemPercent Collection Optimization
+**Learning:** The sparkline data collector for memory () was fully scanning  every 500ms, which unnecessarily allocated strings and took CPU time for 50+ lines when it only needed the first few ( and ).
+**Action:** Add an early break condition  inside the loop scanning  when all required fields have been extracted, similar to the optimization already present in .
+
+## 2024-08-11 - Sparkline MemPercent Collection Optimization
+**Learning:** The sparkline data collector for memory (`collectMemPercent`) was fully scanning `/proc/meminfo` every 500ms, which unnecessarily allocated strings and took CPU time for 50+ lines when it only needed the first few (`MemTotal` and `MemAvailable`).
+**Action:** Add an early break condition `if total > 0 && avail > 0 { break }` inside the loop scanning `/proc/meminfo` when all required fields have been extracted, similar to the optimization already present in `getMemory`.
