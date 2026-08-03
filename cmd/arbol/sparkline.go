@@ -261,6 +261,11 @@ func collectMemPercent() int {
 				} else if strings.HasPrefix(line, "MemAvailable:") {
 					avail = parseMem(line)
 				}
+				// ⚡ Bolt: Adding an early break once both required fields are found
+				// avoids scanning the rest of the 50+ lines in /proc/meminfo.
+				if total > 0 && avail > 0 {
+					break
+				}
 			}
 			if total > 0 {
 				usedPct := (total - avail) * 100 / total
