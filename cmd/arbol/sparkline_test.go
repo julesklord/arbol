@@ -102,3 +102,16 @@ func TestSparklineBuffer_Get(t *testing.T) {
 		t.Errorf("Get() returned a reference to the internal slice, expected a copy")
 	}
 }
+
+func TestSparklineBuffer_Stop(t *testing.T) {
+	sb := NewSparklineBuffer(5, 1*time.Second)
+
+	sb.Stop()
+
+	select {
+	case <-sb.stopCh:
+		// Channel is closed, test passes
+	default:
+		t.Fatal("expected stopCh to be closed after Stop()")
+	}
+}
