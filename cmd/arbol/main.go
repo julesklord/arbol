@@ -824,36 +824,64 @@ func renderOutput(noASCII, minimal bool, outputFmt string, infoObj SystemInfo, e
 	resourcesNode := &TreeNode{Text: lcyan + bold + "📊 resources" + reset}
 
 	// CPU Usage with optional sparkline
-	cpuText := lblue + "📈 cpu usage: " + reset + formatResValue(cpuUsageVal, theme, reset)
+	var cpuSb strings.Builder
+	cpuFmtRes := formatResValue(cpuUsageVal, theme, reset)
+	cpuSb.Grow(len(lblue) + 20 + len(reset) + len(cpuFmtRes) + 30) // Pre-allocate
+	cpuSb.WriteString(lblue)
+	cpuSb.WriteString("📈 cpu usage: ")
+	cpuSb.WriteString(reset)
+	cpuSb.WriteString(cpuFmtRes)
 	if sparklineEnabled && infoObj.CPUUsage != "n/a" {
-		cpuText += "  " + getSparklineCPU(theme)
+		cpuSb.WriteString("  ")
+		cpuSb.WriteString(getSparklineCPU(theme))
 	}
-	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: cpuText})
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: cpuSb.String()})
 
 	if infoObj.CPUTemp != "n/a" {
 		resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "🌡️ cpu temp: " + reset + formatInfoValue(infoObj.CPUTemp, theme, italic, reset)})
 	}
 
 	// Memory with optional sparkline
-	memText := lblue + "💾 memory: " + reset + formatResValue(memVal, theme, reset)
+	var memSb strings.Builder
+	memFmtRes := formatResValue(memVal, theme, reset)
+	memSb.Grow(len(lblue) + 20 + len(reset) + len(memFmtRes) + 30)
+	memSb.WriteString(lblue)
+	memSb.WriteString("💾 memory: ")
+	memSb.WriteString(reset)
+	memSb.WriteString(memFmtRes)
 	if sparklineEnabled && infoObj.Memory != "n/a" && !strings.HasPrefix(infoObj.Memory, "n/a (") {
-		memText += "  " + getSparklineMem(theme)
+		memSb.WriteString("  ")
+		memSb.WriteString(getSparklineMem(theme))
 	}
-	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: memText})
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: memSb.String()})
 
 	// Swap with optional sparkline
-	swapText := lblue + "🔄 swap: " + reset + formatResValue(swapVal, theme, reset)
+	var swapSb strings.Builder
+	swapFmtRes := formatResValue(swapVal, theme, reset)
+	swapSb.Grow(len(lblue) + 20 + len(reset) + len(swapFmtRes) + 30)
+	swapSb.WriteString(lblue)
+	swapSb.WriteString("🔄 swap: ")
+	swapSb.WriteString(reset)
+	swapSb.WriteString(swapFmtRes)
 	if sparklineEnabled && infoObj.Swap != "n/a" && !strings.HasPrefix(infoObj.Swap, "n/a (") {
-		swapText += "  " + getSparklineSwap(theme)
+		swapSb.WriteString("  ")
+		swapSb.WriteString(getSparklineSwap(theme))
 	}
-	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: swapText})
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: swapSb.String()})
 
 	// Disk with optional sparkline
-	diskText := lblue + "💿 disk: " + reset + formatResValue(diskVal, theme, reset)
+	var diskSb strings.Builder
+	diskFmtRes := formatResValue(diskVal, theme, reset)
+	diskSb.Grow(len(lblue) + 20 + len(reset) + len(diskFmtRes) + 30)
+	diskSb.WriteString(lblue)
+	diskSb.WriteString("💿 disk: ")
+	diskSb.WriteString(reset)
+	diskSb.WriteString(diskFmtRes)
 	if sparklineEnabled && infoObj.Disk != "n/a" && !strings.HasPrefix(infoObj.Disk, "n/a (") {
-		diskText += "  " + getSparklineDisk(theme)
+		diskSb.WriteString("  ")
+		diskSb.WriteString(getSparklineDisk(theme))
 	}
-	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: diskText})
+	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: diskSb.String()})
 
 	resourcesNode.Children = append(resourcesNode.Children, &TreeNode{Text: lblue + "⚡ processes: " + reset + formatInfoValue(infoObj.Processes, theme, italic, reset)})
 	root.Children = append(root.Children, resourcesNode)
