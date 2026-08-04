@@ -295,10 +295,10 @@ func getGradientBar(pct int, restore, gray string) string {
 	// 4-color gradient: green -> yellow -> orange -> red
 	gradientChars := []string{"░", "▒", "▓", "█"}
 	gradientColors := []string{
-		"\033[38;2;0;255;0m",     // Green
-		"\033[38;2;170;255;0m",   // Yellow-green
-		"\033[38;2;255;170;0m",   // Orange
-		"\033[38;2;255;0;0m",     // Red
+		"\033[38;2;0;255;0m",   // Green
+		"\033[38;2;170;255;0m", // Yellow-green
+		"\033[38;2;255;170;0m", // Orange
+		"\033[38;2;255;0;0m",   // Red
 	}
 
 	filled := pct / 10
