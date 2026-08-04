@@ -18,13 +18,13 @@ type Theme struct {
 var themes = map[string]Theme{
 	"default": {
 		Name:      "default",
-		Primary:   "\033[38;2;0;242;254m",    // Electric Cyan
-		Secondary: "\033[38;2;79;172;254m",   // Blue
-		Success:   "\033[01;32m",              // Green
-		Warning:   "\033[01;33m",              // Yellow
-		Error:     "\033[01;31m",              // Red
-		Muted:     "\033[90m",                 // Gray
-		TreeLines: "\033[90m",                 // Gray
+		Primary:   "\033[38;2;0;242;254m",  // Electric Cyan
+		Secondary: "\033[38;2;79;172;254m", // Blue
+		Success:   "\033[01;32m",           // Green
+		Warning:   "\033[01;33m",           // Yellow
+		Error:     "\033[01;31m",           // Red
+		Muted:     "\033[90m",              // Gray
+		TreeLines: "\033[90m",              // Gray
 		BannerGradient: [2][3]int{
 			{255, 94, 98}, // Coral Red
 			{0, 242, 254}, // Electric Cyan

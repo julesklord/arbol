@@ -19,3 +19,6 @@
 ## 2026-07-29 - Optimize /proc scanning
 **Learning:** When scanning files line-by-line where only a few lines at the top contain the necessary information (like `MemTotal` and `MemAvailable` in `/proc/meminfo`), scanning the entire file introduces unnecessary allocations and CPU overhead. Also, using `strings.SplitN` for simple colon separation allocates string slices, whereas `strings.IndexByte` with slice indexing avoids it completely.
 **Action:** Always add early breaks in `bufio.Scanner` loops once the required data is collected, and prefer `strings.IndexByte` over `strings.Split` for simple tokenization in hot paths.
+## 2025-02-23 - Optimize JSON Export Loop
+**Learning:** Using `fmt.Printf` repeatedly inside a loop for string concatenation and formatting introduces significant overhead due to repeated I/O and reflection in the hot path.
+**Action:** Replace repetitive `fmt.Printf` loop calls with `strings.Builder` and standard string writing (`WriteString`) when formatting outputs, significantly improving execution time and lowering allocations.

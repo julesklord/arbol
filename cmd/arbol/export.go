@@ -57,14 +57,16 @@ func printJSON(info SystemInfo) {
 			fmt.Printf("      \"value\": %q", cleanVal)
 			if len(plug.Details) > 0 {
 				fmt.Printf(",\n      \"details\": [\n")
+				var sb strings.Builder
 				for j, det := range plug.Details {
-					fmt.Printf("        %q", stripANSI(det))
+					fmt.Fprintf(&sb, "        %q", stripANSI(det))
 					if j < len(plug.Details)-1 {
-						fmt.Printf(",\n")
+						sb.WriteString(",\n")
 					} else {
-						fmt.Printf("\n")
+						sb.WriteString("\n")
 					}
 				}
+				fmt.Print(sb.String())
 				fmt.Printf("      ]\n")
 			} else {
 				fmt.Printf("\n")
