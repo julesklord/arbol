@@ -41,7 +41,7 @@ func getKernel() string {
 		}
 		return string(release)
 	}
-	out := runCommand("uname", "-r")
+	out := runCommand("/bin/uname", "-r")
 	if out != "" {
 		return strings.TrimSpace(out)
 	}

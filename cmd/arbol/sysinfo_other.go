@@ -26,7 +26,7 @@ func getProcesses() string {
 }
 
 func getKernel() string {
-	out := runCommand("uname", "-r")
+	out := runCommand("/usr/bin/uname", "-r")
 	if out != "" {
 		return strings.TrimSpace(out)
 	}
