@@ -17,3 +17,7 @@
 ## 2024-05-24 - sysinfo.go getCPUTicks Optimization
 **Learning:** Found an opportunity to optimize `/proc/stat` parsing in Go by eliminating the use of `strings.Fields()` which allocates a slice and strings for each token, and instead parsing integers in a single pass over the string buffer using a custom loop.
 **Action:** When extracting data from Linux procfs files in high-frequency/hot paths, skip generic string-splitting functions in favor of hand-rolled indexing loops for scanning string values.
+
+## 2024-05-18 - sync.Once initialization for CLI functions
+**Learning:** Using `sync.Once` for caching system metrics (like CPU names) ensures thread-safe lazy initialization, especially important for CLI applications that might run in live-mode (where the function is called frequently in a loop).
+**Action:** Use `sync.Once` and package-level global variables when fetching slow, static metrics that need to be queried repeatedly in the codebase.

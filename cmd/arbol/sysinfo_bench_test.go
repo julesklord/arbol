@@ -27,3 +27,9 @@ func BenchmarkGetCPUUsage(b *testing.B) {
 		getCPUUsage()
 	}
 }
+
+func BenchmarkGetCPU(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		getCPU()
+	}
+}
