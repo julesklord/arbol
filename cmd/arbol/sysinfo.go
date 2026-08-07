@@ -189,23 +189,29 @@ func getMemory() string {
 		pageSize = 4096 // default
 		lines := strings.Split(vmStat, "\n")
 		for _, line := range lines {
-			if strings.Contains(line, "page size of") {
-				fields := strings.Fields(line)
-				if len(fields) >= 8 {
-					val := strings.TrimRight(fields[7], ".")
-					pageSize, _ = strconv.ParseInt(val, 10, 64)
+			if strings.HasPrefix(line, "Mach Virtual") {
+				// ⚡ Bolt: Fast parsing of vm_stat without strings.Fields overhead
+				idx := strings.Index(line, "page size of ")
+				if idx != -1 {
+					s := line[idx+13:]
+					idx2 := strings.IndexByte(s, ' ')
+					if idx2 != -1 {
+						pageSize, _ = strconv.ParseInt(s[:idx2], 10, 64)
+					}
 				}
 			} else if strings.HasPrefix(line, "Pages free:") {
-				fields := strings.Fields(line)
-				if len(fields) >= 3 {
-					val := strings.TrimRight(fields[2], ".")
-					freePages, _ = strconv.ParseInt(val, 10, 64)
+				idx := strings.IndexByte(line, ':')
+				if idx != -1 {
+					s := strings.TrimSpace(line[idx+1:])
+					s = strings.TrimRight(s, ".")
+					freePages, _ = strconv.ParseInt(s, 10, 64)
 				}
 			} else if strings.HasPrefix(line, "Pages inactive:") {
-				fields := strings.Fields(line)
-				if len(fields) >= 3 {
-					val := strings.TrimRight(fields[2], ".")
-					inactivePages, _ = strconv.ParseInt(val, 10, 64)
+				idx := strings.IndexByte(line, ':')
+				if idx != -1 {
+					s := strings.TrimSpace(line[idx+1:])
+					s = strings.TrimRight(s, ".")
+					inactivePages, _ = strconv.ParseInt(s, 10, 64)
 				}
 			}
 		}
@@ -237,9 +243,11 @@ func getDisk() string {
 					defer file.Close()
 					scanner := bufio.NewScanner(file)
 					for scanner.Scan() {
-						fields := strings.Fields(scanner.Text())
-						if len(fields) >= 2 && fields[1] == "/" {
-							fsName = fields[0]
+						text := scanner.Text()
+						// ⚡ Bolt: Fast parsing of /proc/mounts without strings.Fields allocation overhead
+						idx := strings.Index(text, " / ")
+						if idx != -1 {
+							fsName = text[:idx]
 							break
 						}
 					}
