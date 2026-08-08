@@ -1,5 +1,6 @@
 package main
 
+
 import (
 	"bufio"
 	"context"
@@ -9,9 +10,69 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 )
+
+var (
+	osNameCache   string
+	distroIDCache string
+	cpuCache      string
+	osReleaseOnce sync.Once
+	cpuOnce       sync.Once
+)
+
+// OPTIMIZATION: Cache static system metrics using sync.Once to eliminate
+// redundant file I/O and process allocation overhead during live mode iterations.
+func readOSRelease() {
+	if runtime.GOOS == "darwin" {
+		name := runCommand("sw_vers", "-productName")
+		ver := runCommand("sw_vers", "-productVersion")
+		if name != "" && ver != "" {
+			osNameCache = name + " " + ver
+		} else {
+			osNameCache = "macOS"
+		}
+		distroIDCache = "darwin"
+		return
+	}
+	if runtime.GOOS == "linux" {
+		file, err := os.Open("/etc/os-release")
+		if err == nil {
+			defer file.Close()
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				line := scanner.Text()
+				if strings.HasPrefix(line, "PRETTY_NAME=") {
+					val := strings.TrimPrefix(line, "PRETTY_NAME=")
+					osNameCache = strings.Trim(val, "\"")
+				} else if strings.HasPrefix(line, "ID=") {
+					val := strings.TrimPrefix(line, "ID=")
+					distroIDCache = strings.Trim(val, "\"")
+				}
+				if osNameCache != "" && distroIDCache != "" {
+					break
+				}
+			}
+		}
+	}
+	if osNameCache == "" {
+		if runtime.GOOS == "linux" {
+			osNameCache = "Linux"
+		} else {
+			osNameCache = runtime.GOOS
+		}
+	}
+	if distroIDCache == "" {
+		if runtime.GOOS == "linux" {
+			distroIDCache = "linux"
+		} else {
+			distroIDCache = runtime.GOOS
+		}
+	}
+}
+
 
 func runCommand(name string, arg ...string) string {
 	out, err := exec.Command(name, arg...).Output()
@@ -32,51 +93,13 @@ func runCommandWithTimeout(timeout time.Duration, name string, arg ...string) st
 }
 
 func getOSName() string {
-	if runtime.GOOS == "darwin" {
-		name := runCommand("sw_vers", "-productName")
-		ver := runCommand("sw_vers", "-productVersion")
-		if name != "" && ver != "" {
-			return name + " " + ver
-		}
-		return "macOS"
-	}
-	if runtime.GOOS == "linux" {
-		file, err := os.Open("/etc/os-release")
-		if err == nil {
-			defer file.Close()
-			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				line := scanner.Text()
-				if strings.HasPrefix(line, "PRETTY_NAME=") {
-					val := strings.TrimPrefix(line, "PRETTY_NAME=")
-					return strings.Trim(val, "\"")
-				}
-			}
-		}
-		return "Linux"
-	}
-	return runtime.GOOS
+	osReleaseOnce.Do(readOSRelease)
+	return osNameCache
 }
 
 func getDistroID() string {
-	if runtime.GOOS == "darwin" {
-		return "darwin"
-	}
-	if runtime.GOOS == "linux" {
-		file, err := os.Open("/etc/os-release")
-		if err == nil {
-			defer file.Close()
-			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				line := scanner.Text()
-				if strings.HasPrefix(line, "ID=") {
-					val := strings.TrimPrefix(line, "ID=")
-					return strings.Trim(val, "\"")
-				}
-			}
-		}
-	}
-	return "linux"
+	osReleaseOnce.Do(readOSRelease)
+	return distroIDCache
 }
 
 func getUptime() string {
@@ -122,34 +145,41 @@ func getUptime() string {
 }
 
 func getCPU() string {
-	if runtime.GOOS == "linux" {
-		file, err := os.Open("/proc/cpuinfo")
-		if err == nil {
-			defer file.Close()
-			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				line := scanner.Text()
-				if strings.HasPrefix(line, "model name") {
-					// ⚡ Bolt: Using IndexByte and slice indexing instead of SplitN
-					// to avoid allocating string slices and overhead.
-					idx := strings.IndexByte(line, ':')
-					if idx != -1 {
-						return strings.TrimSpace(line[idx+1:])
+	cpuOnce.Do(func() {
+		if runtime.GOOS == "linux" {
+			file, err := os.Open("/proc/cpuinfo")
+			if err == nil {
+				defer file.Close()
+				scanner := bufio.NewScanner(file)
+				for scanner.Scan() {
+					line := scanner.Text()
+					if strings.HasPrefix(line, "model name") {
+						// ⚡ Bolt: Using IndexByte and slice indexing instead of SplitN
+						// to avoid allocating string slices and overhead.
+						idx := strings.IndexByte(line, ':')
+						if idx != -1 {
+							cpuCache = strings.TrimSpace(line[idx+1:])
+							break
+						}
 					}
 				}
 			}
+		} else if runtime.GOOS == "darwin" {
+			brand := runCommand("sysctl", "-n", "machdep.cpu.brand_string")
+			if brand != "" {
+				cpuCache = brand
+			} else {
+				model := runCommand("sysctl", "-n", "hw.model")
+				if model != "" {
+					cpuCache = model
+				}
+			}
 		}
-	} else if runtime.GOOS == "darwin" {
-		brand := runCommand("sysctl", "-n", "machdep.cpu.brand_string")
-		if brand != "" {
-			return brand
+		if cpuCache == "" {
+			cpuCache = "Unknown CPU"
 		}
-		model := runCommand("sysctl", "-n", "hw.model")
-		if model != "" {
-			return model
-		}
-	}
-	return "Unknown CPU"
+	})
+	return cpuCache
 }
 
 func getMemory() string {
