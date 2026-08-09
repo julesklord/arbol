@@ -17,3 +17,6 @@
 ## 2024-05-24 - sysinfo.go getCPUTicks Optimization
 **Learning:** Found an opportunity to optimize `/proc/stat` parsing in Go by eliminating the use of `strings.Fields()` which allocates a slice and strings for each token, and instead parsing integers in a single pass over the string buffer using a custom loop.
 **Action:** When extracting data from Linux procfs files in high-frequency/hot paths, skip generic string-splitting functions in favor of hand-rolled indexing loops for scanning string values.
+## 2024-05-18 - Cache static system metrics to avoid live mode overhead
+**Learning:** Fetching static system metrics (like CPU, OS, Distro) from /proc files or subprocesses repeatedly during live mode iterations results in significant I/O and process allocation overhead.
+**Action:** Use `sync.Once` and static caching to ensure properties that do not change over the lifecycle of the application are fetched only once.
