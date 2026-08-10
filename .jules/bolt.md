@@ -20,3 +20,7 @@
 ## 2024-05-18 - Cache static system metrics to avoid live mode overhead
 **Learning:** Fetching static system metrics (like CPU, OS, Distro) from /proc files or subprocesses repeatedly during live mode iterations results in significant I/O and process allocation overhead.
 **Action:** Use `sync.Once` and static caching to ensure properties that do not change over the lifecycle of the application are fetched only once.
+
+## 2024-08-10 - [Avoid bufio.Scanner when reading only the first line]
+**Learning:** bufio.Scanner allocates significant memory when reading files. If only the first line (or short prefix) is needed, reading into a fixed byte array avoids large allocations and cuts memory usage.
+**Action:** When extracting data from the first line of a file, especially in high-frequency paths like /proc metrics, use direct file.Read into a static buffer instead of bufio.Scanner.
