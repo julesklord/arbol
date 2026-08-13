@@ -1,6 +1,5 @@
 package main
 
-
 import (
 	"bufio"
 	"context"
@@ -74,7 +73,6 @@ func readOSRelease() {
 		}
 	}
 }
-
 
 func runCommand(name string, arg ...string) string {
 	out, err := exec.Command(name, arg...).Output()
@@ -399,37 +397,42 @@ func getCPUTicks() (user, nice, system, idle, iowait, irq, softirq int64, err er
 		return 0, 0, 0, 0, 0, 0, 0, err
 	}
 	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	if scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "cpu ") {
-			// ⚡ Bolt: Fast path without strings.Fields overhead.
-			idx := 3 // skip "cpu"
-			var vals [7]int64
-			valIdx := 0
-			for valIdx < 7 && idx < len(line) {
-				for idx < len(line) && line[idx] == ' ' {
-					idx++
-				}
-				if idx >= len(line) {
-					break
-				}
-				end := idx
-				for end < len(line) && line[end] != ' ' {
-					end++
-				}
-				if end > idx {
-					v, err := strconv.ParseInt(line[idx:end], 10, 64)
-					if err == nil {
-						vals[valIdx] = v
-						valIdx++
-					}
-				}
-				idx = end
+
+	// ⚡ Bolt: Avoid bufio.Scanner and string allocations by reading directly into a small buffer.
+	// We only need the first line which contains the total CPU ticks.
+	var buf [256]byte
+	n, err := file.Read(buf[:])
+	if err != nil || n < 5 {
+		return 0, 0, 0, 0, 0, 0, 0, fmt.Errorf("read error or too short")
+	}
+
+	line := buf[:n]
+	if len(line) > 4 && line[0] == 'c' && line[1] == 'p' && line[2] == 'u' && line[3] == ' ' {
+		idx := 3 // skip "cpu"
+		var vals [7]int64
+		valIdx := 0
+		for valIdx < 7 && idx < len(line) {
+			for idx < len(line) && line[idx] == ' ' {
+				idx++
 			}
-			if valIdx >= 7 {
-				return vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], nil
+			if idx >= len(line) || line[idx] == 10 { // 10 is '\n'
+				break
 			}
+			end := idx
+			for end < len(line) && line[end] != ' ' && line[end] != 10 {
+				end++
+			}
+			if end > idx {
+				v, err := strconv.ParseInt(string(line[idx:end]), 10, 64)
+				if err == nil {
+					vals[valIdx] = v
+					valIdx++
+				}
+			}
+			idx = end
+		}
+		if valIdx >= 7 {
+			return vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], nil
 		}
 	}
 	return 0, 0, 0, 0, 0, 0, 0, fmt.Errorf("invalid format")
