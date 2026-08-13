@@ -17,6 +17,7 @@
 ## 2024-05-24 - sysinfo.go getCPUTicks Optimization
 **Learning:** Found an opportunity to optimize `/proc/stat` parsing in Go by eliminating the use of `strings.Fields()` which allocates a slice and strings for each token, and instead parsing integers in a single pass over the string buffer using a custom loop.
 **Action:** When extracting data from Linux procfs files in high-frequency/hot paths, skip generic string-splitting functions in favor of hand-rolled indexing loops for scanning string values.
+
 ## 2024-05-18 - Cache static system metrics to avoid live mode overhead
 **Learning:** Fetching static system metrics (like CPU, OS, Distro) from /proc files or subprocesses repeatedly during live mode iterations results in significant I/O and process allocation overhead.
 **Action:** Use `sync.Once` and static caching to ensure properties that do not change over the lifecycle of the application are fetched only once.
@@ -24,3 +25,7 @@
 ## 2024-08-10 - [Avoid bufio.Scanner when reading only the first line]
 **Learning:** bufio.Scanner allocates significant memory when reading files. If only the first line (or short prefix) is needed, reading into a fixed byte array avoids large allocations and cuts memory usage.
 **Action:** When extracting data from the first line of a file, especially in high-frequency paths like /proc metrics, use direct file.Read into a static buffer instead of bufio.Scanner.
+
+## 2024-11-20 - [Cache slow static hardware commands]
+**Learning:** Hardware queries via subprocesses like `lspci` and `system_profiler` create immense overhead when executed repeatedly in a live application loop.
+**Action:** Use package-level variables protected by `sync.Once` to lazy-initialize and cache static system information, reducing redundant subprocess I/O overhead.

@@ -18,8 +18,10 @@ var (
 	osNameCache   string
 	distroIDCache string
 	cpuCache      string
+	gpuCache      string
 	osReleaseOnce sync.Once
 	cpuOnce       sync.Once
+	gpuOnce       sync.Once
 )
 
 // OPTIMIZATION: Cache static system metrics using sync.Once to eliminate
@@ -293,50 +295,55 @@ func getDisk() string {
 }
 
 func getGPU() string {
-	if runtime.GOOS == "darwin" {
-		// OPTIMIZATION: Avoid shelling out to bash for system_profiler
-		out := runCommandWithTimeout(2*time.Second, "system_profiler", "SPDisplaysDataType")
-		if out != "" {
-			lines := strings.Split(out, "\n")
-			for _, line := range lines {
-				if strings.Contains(line, "Chipset Model:") {
-					parts := strings.Split(line, ":")
-					if len(parts) >= 2 {
-						return strings.TrimSpace(parts[1])
-					}
-				}
-			}
-		}
-	} else if runtime.GOOS == "linux" {
-		// OPTIMIZATION: Avoid shelling out to bash for lspci
-		out := runCommandWithTimeout(2*time.Second, "lspci")
-		if out != "" {
-			lines := strings.Split(out, "\n")
-			for _, line := range lines {
-				lower := strings.ToLower(line)
-				if strings.Contains(lower, "vga") || strings.Contains(lower, "3d") || strings.Contains(lower, "display") {
-					if idx := strings.Index(line, "controller:"); idx != -1 {
-						line = line[idx+11:]
-					} else if idx := strings.Index(line, "VGA compatible controller: "); idx != -1 {
-						line = line[idx+27:]
-					} else if idx := strings.Index(line, "3D controller: "); idx != -1 {
-						line = line[idx+15:]
-					} else {
-						// Fallback if the expected string isn't perfectly formatted
-						parts := strings.SplitN(line, ": ", 2)
+	gpuOnce.Do(func() {
+		if runtime.GOOS == "darwin" {
+			// OPTIMIZATION: Avoid shelling out to bash for system_profiler
+			out := runCommandWithTimeout(2*time.Second, "system_profiler", "SPDisplaysDataType")
+			if out != "" {
+				lines := strings.Split(out, "\n")
+				for _, line := range lines {
+					if strings.Contains(line, "Chipset Model:") {
+						parts := strings.Split(line, ":")
 						if len(parts) >= 2 {
-							line = parts[1]
+							gpuCache = strings.TrimSpace(parts[1])
+							return
 						}
 					}
-					if idx := strings.Index(line, " (rev "); idx != -1 {
-						line = line[:idx]
+				}
+			}
+		} else if runtime.GOOS == "linux" {
+			// OPTIMIZATION: Avoid shelling out to bash for lspci
+			out := runCommandWithTimeout(2*time.Second, "lspci")
+			if out != "" {
+				lines := strings.Split(out, "\n")
+				for _, line := range lines {
+					lower := strings.ToLower(line)
+					if strings.Contains(lower, "vga") || strings.Contains(lower, "3d") || strings.Contains(lower, "display") {
+						if idx := strings.Index(line, "controller:"); idx != -1 {
+							line = line[idx+11:]
+						} else if idx := strings.Index(line, "VGA compatible controller: "); idx != -1 {
+							line = line[idx+27:]
+						} else if idx := strings.Index(line, "3D controller: "); idx != -1 {
+							line = line[idx+15:]
+						} else {
+							// Fallback if the expected string isn't perfectly formatted
+							parts := strings.SplitN(line, ": ", 2)
+							if len(parts) >= 2 {
+								line = parts[1]
+							}
+						}
+						if idx := strings.Index(line, " (rev "); idx != -1 {
+							line = line[:idx]
+						}
+						gpuCache = strings.TrimSpace(line)
+						return
 					}
-					return strings.TrimSpace(line)
 				}
 			}
 		}
-	}
-	return "n/a"
+		gpuCache = "n/a"
+	})
+	return gpuCache
 }
 
 func getDEWM() string {
