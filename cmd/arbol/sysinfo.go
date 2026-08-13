@@ -9,9 +9,70 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 )
+
+var (
+	osNameCache   string
+	distroIDCache string
+	cpuCache      string
+	gpuCache      string
+	osReleaseOnce sync.Once
+	cpuOnce       sync.Once
+	gpuOnce       sync.Once
+)
+
+// OPTIMIZATION: Cache static system metrics using sync.Once to eliminate
+// redundant file I/O and process allocation overhead during live mode iterations.
+func readOSRelease() {
+	if runtime.GOOS == "darwin" {
+		name := runCommand("sw_vers", "-productName")
+		ver := runCommand("sw_vers", "-productVersion")
+		if name != "" && ver != "" {
+			osNameCache = name + " " + ver
+		} else {
+			osNameCache = "macOS"
+		}
+		distroIDCache = "darwin"
+		return
+	}
+	if runtime.GOOS == "linux" {
+		file, err := os.Open("/etc/os-release")
+		if err == nil {
+			defer file.Close()
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				line := scanner.Text()
+				if strings.HasPrefix(line, "PRETTY_NAME=") {
+					val := strings.TrimPrefix(line, "PRETTY_NAME=")
+					osNameCache = strings.Trim(val, "\"")
+				} else if strings.HasPrefix(line, "ID=") {
+					val := strings.TrimPrefix(line, "ID=")
+					distroIDCache = strings.Trim(val, "\"")
+				}
+				if osNameCache != "" && distroIDCache != "" {
+					break
+				}
+			}
+		}
+	}
+	if osNameCache == "" {
+		if runtime.GOOS == "linux" {
+			osNameCache = "Linux"
+		} else {
+			osNameCache = runtime.GOOS
+		}
+	}
+	if distroIDCache == "" {
+		if runtime.GOOS == "linux" {
+			distroIDCache = "linux"
+		} else {
+			distroIDCache = runtime.GOOS
+		}
+	}
+}
 
 func runCommand(name string, arg ...string) string {
 	out, err := exec.Command(name, arg...).Output()
@@ -32,51 +93,13 @@ func runCommandWithTimeout(timeout time.Duration, name string, arg ...string) st
 }
 
 func getOSName() string {
-	if runtime.GOOS == "darwin" {
-		name := runCommand("sw_vers", "-productName")
-		ver := runCommand("sw_vers", "-productVersion")
-		if name != "" && ver != "" {
-			return name + " " + ver
-		}
-		return "macOS"
-	}
-	if runtime.GOOS == "linux" {
-		file, err := os.Open("/etc/os-release")
-		if err == nil {
-			defer file.Close()
-			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				line := scanner.Text()
-				if strings.HasPrefix(line, "PRETTY_NAME=") {
-					val := strings.TrimPrefix(line, "PRETTY_NAME=")
-					return strings.Trim(val, "\"")
-				}
-			}
-		}
-		return "Linux"
-	}
-	return runtime.GOOS
+	osReleaseOnce.Do(readOSRelease)
+	return osNameCache
 }
 
 func getDistroID() string {
-	if runtime.GOOS == "darwin" {
-		return "darwin"
-	}
-	if runtime.GOOS == "linux" {
-		file, err := os.Open("/etc/os-release")
-		if err == nil {
-			defer file.Close()
-			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				line := scanner.Text()
-				if strings.HasPrefix(line, "ID=") {
-					val := strings.TrimPrefix(line, "ID=")
-					return strings.Trim(val, "\"")
-				}
-			}
-		}
-	}
-	return "linux"
+	osReleaseOnce.Do(readOSRelease)
+	return distroIDCache
 }
 
 func getUptime() string {
@@ -122,34 +145,41 @@ func getUptime() string {
 }
 
 func getCPU() string {
-	if runtime.GOOS == "linux" {
-		file, err := os.Open("/proc/cpuinfo")
-		if err == nil {
-			defer file.Close()
-			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				line := scanner.Text()
-				if strings.HasPrefix(line, "model name") {
-					// ⚡ Bolt: Using IndexByte and slice indexing instead of SplitN
-					// to avoid allocating string slices and overhead.
-					idx := strings.IndexByte(line, ':')
-					if idx != -1 {
-						return strings.TrimSpace(line[idx+1:])
+	cpuOnce.Do(func() {
+		if runtime.GOOS == "linux" {
+			file, err := os.Open("/proc/cpuinfo")
+			if err == nil {
+				defer file.Close()
+				scanner := bufio.NewScanner(file)
+				for scanner.Scan() {
+					line := scanner.Text()
+					if strings.HasPrefix(line, "model name") {
+						// ⚡ Bolt: Using IndexByte and slice indexing instead of SplitN
+						// to avoid allocating string slices and overhead.
+						idx := strings.IndexByte(line, ':')
+						if idx != -1 {
+							cpuCache = strings.TrimSpace(line[idx+1:])
+							break
+						}
 					}
 				}
 			}
+		} else if runtime.GOOS == "darwin" {
+			brand := runCommand("sysctl", "-n", "machdep.cpu.brand_string")
+			if brand != "" {
+				cpuCache = brand
+			} else {
+				model := runCommand("sysctl", "-n", "hw.model")
+				if model != "" {
+					cpuCache = model
+				}
+			}
 		}
-	} else if runtime.GOOS == "darwin" {
-		brand := runCommand("sysctl", "-n", "machdep.cpu.brand_string")
-		if brand != "" {
-			return brand
+		if cpuCache == "" {
+			cpuCache = "Unknown CPU"
 		}
-		model := runCommand("sysctl", "-n", "hw.model")
-		if model != "" {
-			return model
-		}
-	}
-	return "Unknown CPU"
+	})
+	return cpuCache
 }
 
 func getMemory() string {
@@ -273,50 +303,55 @@ func getDisk() string {
 }
 
 func getGPU() string {
-	if runtime.GOOS == "darwin" {
-		// OPTIMIZATION: Avoid shelling out to bash for system_profiler
-		out := runCommandWithTimeout(2*time.Second, "system_profiler", "SPDisplaysDataType")
-		if out != "" {
-			lines := strings.Split(out, "\n")
-			for _, line := range lines {
-				if strings.Contains(line, "Chipset Model:") {
-					parts := strings.Split(line, ":")
-					if len(parts) >= 2 {
-						return strings.TrimSpace(parts[1])
-					}
-				}
-			}
-		}
-	} else if runtime.GOOS == "linux" {
-		// OPTIMIZATION: Avoid shelling out to bash for lspci
-		out := runCommandWithTimeout(2*time.Second, "lspci")
-		if out != "" {
-			lines := strings.Split(out, "\n")
-			for _, line := range lines {
-				lower := strings.ToLower(line)
-				if strings.Contains(lower, "vga") || strings.Contains(lower, "3d") || strings.Contains(lower, "display") {
-					if idx := strings.Index(line, "controller:"); idx != -1 {
-						line = line[idx+11:]
-					} else if idx := strings.Index(line, "VGA compatible controller: "); idx != -1 {
-						line = line[idx+27:]
-					} else if idx := strings.Index(line, "3D controller: "); idx != -1 {
-						line = line[idx+15:]
-					} else {
-						// Fallback if the expected string isn't perfectly formatted
-						parts := strings.SplitN(line, ": ", 2)
+	gpuOnce.Do(func() {
+		if runtime.GOOS == "darwin" {
+			// OPTIMIZATION: Avoid shelling out to bash for system_profiler
+			out := runCommandWithTimeout(2*time.Second, "system_profiler", "SPDisplaysDataType")
+			if out != "" {
+				lines := strings.Split(out, "\n")
+				for _, line := range lines {
+					if strings.Contains(line, "Chipset Model:") {
+						parts := strings.Split(line, ":")
 						if len(parts) >= 2 {
-							line = parts[1]
+							gpuCache = strings.TrimSpace(parts[1])
+							return
 						}
 					}
-					if idx := strings.Index(line, " (rev "); idx != -1 {
-						line = line[:idx]
+				}
+			}
+		} else if runtime.GOOS == "linux" {
+			// OPTIMIZATION: Avoid shelling out to bash for lspci
+			out := runCommandWithTimeout(2*time.Second, "lspci")
+			if out != "" {
+				lines := strings.Split(out, "\n")
+				for _, line := range lines {
+					lower := strings.ToLower(line)
+					if strings.Contains(lower, "vga") || strings.Contains(lower, "3d") || strings.Contains(lower, "display") {
+						if idx := strings.Index(line, "controller:"); idx != -1 {
+							line = line[idx+11:]
+						} else if idx := strings.Index(line, "VGA compatible controller: "); idx != -1 {
+							line = line[idx+27:]
+						} else if idx := strings.Index(line, "3D controller: "); idx != -1 {
+							line = line[idx+15:]
+						} else {
+							// Fallback if the expected string isn't perfectly formatted
+							parts := strings.SplitN(line, ": ", 2)
+							if len(parts) >= 2 {
+								line = parts[1]
+							}
+						}
+						if idx := strings.Index(line, " (rev "); idx != -1 {
+							line = line[:idx]
+						}
+						gpuCache = strings.TrimSpace(line)
+						return
 					}
-					return strings.TrimSpace(line)
 				}
 			}
 		}
-	}
-	return "n/a"
+		gpuCache = "n/a"
+	})
+	return gpuCache
 }
 
 func getDEWM() string {
@@ -370,37 +405,42 @@ func getCPUTicks() (user, nice, system, idle, iowait, irq, softirq int64, err er
 		return 0, 0, 0, 0, 0, 0, 0, err
 	}
 	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	if scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "cpu ") {
-			// ⚡ Bolt: Fast path without strings.Fields overhead.
-			idx := 3 // skip "cpu"
-			var vals [7]int64
-			valIdx := 0
-			for valIdx < 7 && idx < len(line) {
-				for idx < len(line) && line[idx] == ' ' {
-					idx++
-				}
-				if idx >= len(line) {
-					break
-				}
-				end := idx
-				for end < len(line) && line[end] != ' ' {
-					end++
-				}
-				if end > idx {
-					v, err := strconv.ParseInt(line[idx:end], 10, 64)
-					if err == nil {
-						vals[valIdx] = v
-						valIdx++
-					}
-				}
-				idx = end
+
+	// ⚡ Bolt: Avoid bufio.Scanner and string allocations by reading directly into a small buffer.
+	// We only need the first line which contains the total CPU ticks.
+	var buf [256]byte
+	n, err := file.Read(buf[:])
+	if err != nil || n < 5 {
+		return 0, 0, 0, 0, 0, 0, 0, fmt.Errorf("read error or too short")
+	}
+
+	line := buf[:n]
+	if len(line) > 4 && line[0] == 'c' && line[1] == 'p' && line[2] == 'u' && line[3] == ' ' {
+		idx := 3 // skip "cpu"
+		var vals [7]int64
+		valIdx := 0
+		for valIdx < 7 && idx < len(line) {
+			for idx < len(line) && line[idx] == ' ' {
+				idx++
 			}
-			if valIdx >= 7 {
-				return vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], nil
+			if idx >= len(line) || line[idx] == 10 { // 10 is '\n'
+				break
 			}
+			end := idx
+			for end < len(line) && line[end] != ' ' && line[end] != 10 {
+				end++
+			}
+			if end > idx {
+				v, err := strconv.ParseInt(string(line[idx:end]), 10, 64)
+				if err == nil {
+					vals[valIdx] = v
+					valIdx++
+				}
+			}
+			idx = end
+		}
+		if valIdx >= 7 {
+			return vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], nil
 		}
 	}
 	return 0, 0, 0, 0, 0, 0, 0, fmt.Errorf("invalid format")
