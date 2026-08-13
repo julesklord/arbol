@@ -20,3 +20,6 @@
 ## 2024-05-18 - Cache static system metrics to avoid live mode overhead
 **Learning:** Fetching static system metrics (like CPU, OS, Distro) from /proc files or subprocesses repeatedly during live mode iterations results in significant I/O and process allocation overhead.
 **Action:** Use `sync.Once` and static caching to ensure properties that do not change over the lifecycle of the application are fetched only once.
+## 2024-11-20 - [Cache slow static hardware commands]
+**Learning:** Hardware queries via subprocesses like `lspci` and `system_profiler` create immense overhead when executed repeatedly in a live application loop.
+**Action:** Use package-level variables protected by `sync.Once` to lazy-initialize and cache static system information, reducing redundant subprocess I/O overhead.
