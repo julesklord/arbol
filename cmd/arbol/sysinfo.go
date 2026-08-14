@@ -184,28 +184,10 @@ func getCPU() string {
 
 func getMemory() string {
 	if runtime.GOOS == "linux" {
-		file, err := os.Open("/proc/meminfo")
-		if err == nil {
-			defer file.Close()
-			scanner := bufio.NewScanner(file)
-			var total, avail int64
-			for scanner.Scan() {
-				line := scanner.Text()
-				if strings.HasPrefix(line, "MemTotal:") {
-					total = parseMem(line)
-				} else if strings.HasPrefix(line, "MemAvailable:") {
-					avail = parseMem(line)
-				}
-				// ⚡ Bolt: Adding an early break once both required fields are found
-				// avoids scanning the rest of the 50+ lines in /proc/meminfo,
-				// cutting down allocations and execution time by ~50%.
-				if total > 0 && avail > 0 {
-					break
-				}
-			}
+		if total, free, err := getSysinfoMem(); err == nil {
 			if total > 0 {
-				usedPct := (total - avail) * 100 / total
-				return fmt.Sprintf("%d%% (%dMB)", usedPct, total/1024)
+				usedPct := (total - free) * 100 / total
+				return fmt.Sprintf("%d%% (%dMB)", usedPct, total/(1024*1024))
 			}
 		}
 	} else if runtime.GOOS == "darwin" {
@@ -534,19 +516,3 @@ func getCPUTemp() string {
 	return "n/a"
 }
 
-// parseMem extracts the integer value from a meminfo line like "MemTotal:       16301328 kB"
-// This is significantly faster than fmt.Sscanf or strings.Fields
-func parseMem(line string) int64 {
-	idx := strings.IndexByte(line, ':')
-	if idx == -1 {
-		return 0
-	}
-	s := line[idx+1:]
-	s = strings.TrimLeft(s, " \t")
-	idx2 := strings.IndexByte(s, ' ')
-	if idx2 != -1 {
-		s = s[:idx2]
-	}
-	val, _ := strconv.ParseInt(s, 10, 64)
-	return val
-}

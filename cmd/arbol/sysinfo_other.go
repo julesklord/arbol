@@ -40,3 +40,7 @@ func getSysinfoUptime() (int64, error) {
 func getSysinfoSwap() (uint64, uint64, error) {
 	return 0, 0, errors.New("not supported")
 }
+
+func getSysinfoMem() (uint64, uint64, error) {
+	return 0, 0, errors.New("not supported")
+}

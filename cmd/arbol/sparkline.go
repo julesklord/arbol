@@ -3,8 +3,6 @@ package main
 import (
 	"syscall"
 
-	"bufio"
-	"os"
 	"runtime"
 	"strconv"
 	"strings"
@@ -249,21 +247,9 @@ func collectCPUPercent() int {
 
 func collectMemPercent() int {
 	if runtime.GOOS == "linux" {
-		file, err := os.Open("/proc/meminfo")
-		if err == nil {
-			defer file.Close()
-			scanner := bufio.NewScanner(file)
-			var total, avail int64
-			for scanner.Scan() {
-				line := scanner.Text()
-				if strings.HasPrefix(line, "MemTotal:") {
-					total = parseMem(line)
-				} else if strings.HasPrefix(line, "MemAvailable:") {
-					avail = parseMem(line)
-				}
-			}
+		if total, free, err := getSysinfoMem(); err == nil {
 			if total > 0 {
-				usedPct := (total - avail) * 100 / total
+				usedPct := (total - free) * 100 / total
 				return int(usedPct)
 			}
 		}
