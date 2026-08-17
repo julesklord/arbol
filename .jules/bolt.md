@@ -37,3 +37,7 @@
 ## 2024-12-05 - Memory Usage Retrieval Performance
 **Learning:** Parsing `/proc/meminfo` line-by-line, even with optimized indexing, takes ~12-18µs and causes file I/O overhead. Calling the native `syscall.Sysinfo` takes ~1µs (12x-18x speedup) and requires zero file allocations, drastically reducing overhead for sparkline metrics during live loop updates.
 **Action:** Replace `/proc/meminfo` string parsing with `syscall.Sysinfo` in `getMemory` and `collectMemPercent` on Linux for massive speed improvements.
+
+## 2024-05-18 - sync.Once initialization for CLI functions
+**Learning:** Using `sync.Once` for caching system metrics (like CPU names) ensures thread-safe lazy initialization, especially important for CLI applications that might run in live-mode (where the function is called frequently in a loop).
+**Action:** Use `sync.Once` and package-level global variables when fetching slow, static metrics that need to be queried repeatedly in the codebase.
