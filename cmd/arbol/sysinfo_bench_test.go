@@ -33,3 +33,21 @@ func BenchmarkGetCPU(b *testing.B) {
 		getCPU()
 	}
 }
+
+func BenchmarkGetCPUTemp(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		getCPUTemp()
+	}
+}
+
+func BenchmarkGetDisk(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		getDisk()
+	}
+}
+
+func BenchmarkGetUptime(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		getUptime()
+	}
+}

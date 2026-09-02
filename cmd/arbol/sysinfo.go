@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 )
@@ -94,7 +93,6 @@ func runCommandWithTimeout(timeout time.Duration, name string, arg ...string) st
 }
 
 var (
-	osReleaseOnce sync.Once
 	osPrettyName  string
 	osDistroID    string
 )
@@ -180,7 +178,6 @@ func getUptime() string {
 
 var (
 	cachedCPU string
-	cpuOnce   sync.Once
 )
 
 func getCPU() string {
@@ -525,26 +522,44 @@ func getCPUUsage() string {
 	return "n/a"
 }
 
-func getCPUTemp() string {
-	if runtime.GOOS == "linux" {
+
+var (
+	cpuTempPathCache string
+	cpuTempPathOnce  sync.Once
+)
+
+func getCPUTempPath() string {
+	cpuTempPathOnce.Do(func() {
 		for _, zone := range []string{"thermal_zone0", "thermal_zone1", "thermal_zone2"} {
-			data, err := os.ReadFile("/sys/class/thermal/" + zone + "/temp")
-			if err == nil {
-				tempStr := strings.TrimSpace(string(data))
-				if tempVal, err := strconv.ParseFloat(tempStr, 64); err == nil {
-					return fmt.Sprintf("%.1f°C", tempVal/1000.0)
-				}
+			path := "/sys/class/thermal/" + zone + "/temp"
+			if _, err := os.Stat(path); err == nil {
+				cpuTempPathCache = path
+				return
 			}
 		}
 		for i := 0; i < 5; i++ {
 			for j := 1; j <= 3; j++ {
 				path := fmt.Sprintf("/sys/class/hwmon/hwmon%d/temp%d_input", i, j)
-				data, err := os.ReadFile(path)
-				if err == nil {
-					tempStr := strings.TrimSpace(string(data))
-					if tempVal, err := strconv.ParseFloat(tempStr, 64); err == nil {
-						return fmt.Sprintf("%.1f°C", tempVal/1000.0)
-					}
+				if _, err := os.Stat(path); err == nil {
+					cpuTempPathCache = path
+					return
+				}
+			}
+		}
+	})
+	return cpuTempPathCache
+}
+
+
+func getCPUTemp() string {
+	if runtime.GOOS == "linux" {
+		path := getCPUTempPath()
+		if path != "" {
+			data, err := os.ReadFile(path)
+			if err == nil {
+				tempStr := strings.TrimSpace(string(data))
+				if tempVal, err := strconv.ParseFloat(tempStr, 64); err == nil {
+					return fmt.Sprintf("%.1f°C", tempVal/1000.0)
 				}
 			}
 		}
