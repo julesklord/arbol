@@ -41,3 +41,6 @@
 ## 2024-05-18 - sync.Once initialization for CLI functions
 **Learning:** Using `sync.Once` for caching system metrics (like CPU names) ensures thread-safe lazy initialization, especially important for CLI applications that might run in live-mode (where the function is called frequently in a loop).
 **Action:** Use `sync.Once` and package-level global variables when fetching slow, static metrics that need to be queried repeatedly in the codebase.
+## 2024-09-02 - CPU Temperature Path Caching Performance
+**Learning:** Iterating through 18 possible system thermal paths and invoking `os.ReadFile` or `os.Stat` for each during live-mode loops introduces immense filesystem I/O overhead. Since the correct CPU thermal zone file path is static, doing this repeatedly is wasteful.
+**Action:** Use `sync.Once` and caching to find and cache the correct static thermal zone path once on the first run, drastically reducing unnecessary I/O overhead.
