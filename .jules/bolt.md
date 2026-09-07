@@ -41,3 +41,6 @@
 ## 2024-05-18 - sync.Once initialization for CLI functions
 **Learning:** Using `sync.Once` for caching system metrics (like CPU names) ensures thread-safe lazy initialization, especially important for CLI applications that might run in live-mode (where the function is called frequently in a loop).
 **Action:** Use `sync.Once` and package-level global variables when fetching slow, static metrics that need to be queried repeatedly in the codebase.
+## 2024-05-18 - Caching static filesystem paths
+**Learning:** Checking filesystem existence with `os.Stat` inside high-frequency loops (like a live monitor's `/sys/class/hwmon` loop) is extremely expensive and forms a severe bottleneck.
+**Action:** Use `sync.Once` and package-level global variables to locate and cache the exact file path once on the first run, and read directly from that path in all subsequent queries.
