@@ -254,9 +254,7 @@ func collectMemPercent() int {
 			}
 		}
 	} else if runtime.GOOS == "darwin" {
-		totalBytesStr := runCommand("sysctl", "-n", "hw.memsize")
-		totalBytes, _ := strconv.ParseInt(totalBytesStr, 10, 64)
-		totalMB := totalBytes / 1024 / 1024
+		totalMB := getDarwinTotalMemMB()
 
 		// OPTIMIZATION: Consolidate multiple subprocesses into a single native call
 		vmStat := runCommand("vm_stat")
