@@ -41,3 +41,7 @@
 ## 2024-05-18 - sync.Once initialization for CLI functions
 **Learning:** Using `sync.Once` for caching system metrics (like CPU names) ensures thread-safe lazy initialization, especially important for CLI applications that might run in live-mode (where the function is called frequently in a loop).
 **Action:** Use `sync.Once` and package-level global variables when fetching slow, static metrics that need to be queried repeatedly in the codebase.
+
+## 2024-05-18 - Cache sysctl calls on Darwin
+**Learning:** Shelling out to `sysctl -n hw.memsize` on Darwin during frequent live mode loops creates subprocess allocation overhead for static data.
+**Action:** Use `sync.Once` and package-level global variables to lazily fetch and cache slow static Darwin hardware metrics, preventing redundant process spawns.

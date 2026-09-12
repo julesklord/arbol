@@ -1,7 +1,6 @@
 package main
 
 import (
-	"sync"
 	"bufio"
 	"context"
 	"fmt"
@@ -16,13 +15,13 @@ import (
 )
 
 var (
-	osNameCache   string
-	distroIDCache string
-	cpuCache      string
-	gpuCache      string
-	osReleaseOnce sync.Once
-	cpuOnce       sync.Once
-	gpuOnce       sync.Once
+	osNameCache        string
+	distroIDCache      string
+	cpuCache           string
+	gpuCache           string
+	gpuOnce            sync.Once
+	darwinTotalMemMB   int64
+	darwinTotalMemOnce sync.Once
 )
 
 // OPTIMIZATION: Cache static system metrics using sync.Once to eliminate
@@ -223,6 +222,15 @@ func getCPU() string {
 	return cachedCPU
 }
 
+func getDarwinTotalMemMB() int64 {
+	darwinTotalMemOnce.Do(func() {
+		totalBytesStr := runCommand("sysctl", "-n", "hw.memsize")
+		totalBytes, _ := strconv.ParseInt(totalBytesStr, 10, 64)
+		darwinTotalMemMB = totalBytes / 1024 / 1024
+	})
+	return darwinTotalMemMB
+}
+
 func getMemory() string {
 	if runtime.GOOS == "linux" {
 		if total, free, err := getSysinfoMem(); err == nil {
@@ -232,9 +240,7 @@ func getMemory() string {
 			}
 		}
 	} else if runtime.GOOS == "darwin" {
-		totalBytesStr := runCommand("sysctl", "-n", "hw.memsize")
-		totalBytes, _ := strconv.ParseInt(totalBytesStr, 10, 64)
-		totalMB := totalBytes / 1024 / 1024
+		totalMB := getDarwinTotalMemMB()
 
 		// OPTIMIZATION: Consolidate multiple subprocesses into a single native call
 		vmStat := runCommand("vm_stat")
