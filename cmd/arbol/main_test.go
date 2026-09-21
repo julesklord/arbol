@@ -289,7 +289,6 @@ func TestGetBrailleBar(t *testing.T) {
 			restore: "\033[0m",
 			want:    "\033[31m⠀\033[0m\033[90m⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\033[0m", // Note the extra space since fullChars = -1
 		},
->>>>>>> 49aec7d (🧪 add unit tests for getBrailleBar)
 	}
 
 	for _, tt := range tests {

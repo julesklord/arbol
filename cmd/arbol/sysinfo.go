@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 )
@@ -94,7 +93,6 @@ func runCommandWithTimeout(timeout time.Duration, name string, arg ...string) st
 }
 
 var (
-	osReleaseOnce sync.Once
 	osPrettyName  string
 	osDistroID    string
 )
@@ -180,7 +178,6 @@ func getUptime() string {
 
 var (
 	cachedCPU string
-	cpuOnce   sync.Once
 )
 
 func getCPU() string {
